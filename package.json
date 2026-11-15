@@ -1,0 +1,29 @@
+{
+  "name": "merchant-loyalty-saas",
+  "version": "1.0.0",
+  "description": "Multi-Tenant Merchant Loyalty and Membership SaaS CRM platform using Node.js, Express, PostgreSQL (Neon DB), and React/Tailwind CSS",
+  "scripts": {
+    "server:install": "cd server && npm install",
+    "client:install": "cd client && npm install",
+    "install:all": "npm run server:install && npm run client:install",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "migrate": "cd server && npm run migrate",
+    "seed": "cd server && npm run seed",
+    "test": "cd server && npm test",
+    "build": "cd client && npm run build"
+  },
+  "keywords": [
+    "loyalty",
+    "crm",
+    "membership",
+    "pos",
+    "saas",
+    "multi-tenant",
+    "neon",
+    "postgres",
+    "react",
+    "tailwind"
+  ],
+  "license": "MIT"
+}
