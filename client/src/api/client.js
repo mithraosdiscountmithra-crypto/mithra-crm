@@ -147,6 +147,14 @@ export const api = {
   ai: {
     chat: (message, conversationHistory = []) =>
       request('/ai/chat', { method: 'POST', body: { message, conversationHistory } }),
+  },
+
+  // AI Voice Agent & Callback Scheduler (Digital Khata Debtors)
+  voice: {
+    triggerCall: (customerId) => request('/voice/trigger-call', { method: 'POST', body: { customer_id: customerId } }),
+    sendWebhookResponse: (data) => request('/voice/webhook/call-response', { method: 'POST', body: data }),
+    getScheduledCallbacks: () => request('/voice/scheduled-callbacks'),
+    getCallLogs: (customerId = '') => request(`/voice/call-logs${customerId ? `?customer_id=${customerId}` : ''}`),
   }
 };
 

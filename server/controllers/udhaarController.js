@@ -42,7 +42,10 @@ export const getUdhaarSummary = async (req, res) => {
         net_balance: 0,
         pending_count: 0,
         last_transaction: null,
-        due_date: null
+        due_date: null,
+        call_status: 'NOT_CALLED',
+        callback_date: null,
+        payment_link_sent: false
       };
     });
 
@@ -58,8 +61,22 @@ export const getUdhaarSummary = async (req, res) => {
           net_balance: 0,
           pending_count: 0,
           last_transaction: null,
-          due_date: null
+          due_date: null,
+          call_status: 'NOT_CALLED',
+          callback_date: null,
+          payment_link_sent: false
         };
+      }
+
+      // Track voice call updates & callback schedules
+      if (t.call_status && t.call_status !== 'NOT_CALLED') {
+        customerMap[cid].call_status = t.call_status;
+      }
+      if (t.callback_date) {
+        customerMap[cid].callback_date = t.callback_date;
+      }
+      if (t.payment_link_sent) {
+        customerMap[cid].payment_link_sent = true;
       }
 
       const amt = parseFloat(t.amount) || 0;

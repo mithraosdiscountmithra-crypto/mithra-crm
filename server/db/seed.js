@@ -227,6 +227,25 @@ async function seedData() {
         ($1, $4, $5, 'BILL', 280.00, 'Invoice for Barista Gear order', 'PO-202611-002', CURRENT_DATE - INTERVAL '1 day', 'PENDING')
     `, [merchantId, sup1.rows[0].id, po1.rows[0].id, sup2.rows[0].id, po2.rows[0].id]);
 
+    // 15. Seed Debtor AI Voice Call Logs & Scheduled Callbacks
+    await client.query(`
+      INSERT INTO debtor_call_logs (merchant_id, customer_id, call_sid, call_status, intent, transcript, summary, promised_date, callback_scheduled_at, payment_link_sent, payment_link_url, upi_intent_string)
+      VALUES 
+        ($1, $2, 'CALL-VOICE-8811', 'COMPLETED', 'PROMISE_TO_PAY', 
+         'AI: Hello Alex, this is Artisan Coffee calling regarding your balance. Alex: I will be there this Friday to pay the $45. AI: Perfect, noted for Friday!',
+         'Customer promised to pay $45 balance on Friday.', CURRENT_DATE + INTERVAL '4 days', NULL, false, NULL, NULL),
+        
+        ($1, $3, 'CALL-VOICE-8822', 'COMPLETED', 'REQUEST_PAYMENT_LINK',
+         'AI: Hello David, calling regarding your $40 coffee subscription ledger. David: Can you send me a UPI payment link on WhatsApp? AI: Dispatching your UPI link right now via WhatsApp!',
+         'Debtor requested WhatsApp UPI payment link.', NULL, NULL, true, 
+         'https://pay.loyaltyhub.app/upi?pa=artisan@upi&am=40.00',
+         'upi://pay?pa=artisan@upi&pn=Artisan%20Coffee&am=40.00&cu=INR&tn=Khata-Settlement-3'),
+        
+        ($1, $4, 'CALL-VOICE-8833', 'COMPLETED', 'REQUEST_CALLBACK',
+         'AI: Hi Emily, calling from Artisan Coffee. Emily: I am in a work meeting right now, please call me tomorrow morning. AI: Scheduled a callback for tomorrow at 11 AM.',
+         'Debtor requested callback tomorrow morning due to busy schedule.', NULL, CURRENT_TIMESTAMP + INTERVAL '1 day', false, NULL, NULL)
+    `, [merchantId, cust1.rows[0].id, cust3.rows[0].id, cust2.rows[0].id]);
+
     console.log('[Seed] Demo data seeded successfully into PostgreSQL!');
   } catch (err) {
     console.error('[Seed Error]:', err.message);

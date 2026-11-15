@@ -46,6 +46,12 @@ import {
   updatePurchaseOrderStatus
 } from './controllers/purchaseOrdersController.js';
 import { chatWithAICopilot } from './controllers/aiController.js';
+import { 
+  triggerAICall, 
+  handleVoiceWebhook, 
+  getScheduledCallbacks, 
+  getCallLogs 
+} from './controllers/voiceController.js';
 
 // Helper to mock express req/res
 function mockReqRes(reqData = {}) {
@@ -490,7 +496,88 @@ async function runUnitTests() {
     previewSnippet: aiPromoRes.body.reply?.slice(0, 75).replace(/\n/g, ' ')
   });
 
-  console.log('\n🌟 ALL 28 SAAS PLATFORM MODULE CONTROLLERS VERIFIED AND WORKING PROPERLY! 🌟');
+  // 29. Test Trigger AI Voice Call for Debtor
+  const { req: triggerCallReq, res: triggerCallRes } = mockReqRes({
+    merchantId: 1,
+    merchant: { id: 1, store_name: 'Artisan Coffee Roasters' },
+    body: { customer_id: 1 } // Alex Rivera (pending udhaar balance)
+  });
+  await triggerAICall(triggerCallReq, triggerCallRes);
+  console.log('29. Debtor AI Voice Call Trigger:', {
+    passed: triggerCallRes.body.success === true && triggerCallRes.body.customer?.id === 1,
+    callSid: triggerCallRes.body.call_sid,
+    debtorBalance: `$${triggerCallRes.body.customer?.outstanding_balance}`,
+    agentScriptSnippet: triggerCallRes.body.agent_script?.slice(0, 60)
+  });
+
+  // 30. Test Voice Webhook: REQUEST_PAYMENT_LINK intent & Automated WhatsApp UPI Dispatch
+  const { req: linkWebhookReq, res: linkWebhookRes } = mockReqRes({
+    merchantId: 1,
+    merchant: { id: 1, store_name: 'Artisan Coffee Roasters', email: 'artisan@coffee.com' },
+    body: {
+      merchant_id: 1,
+      customer_id: 1,
+      call_sid: 'CALL-TEST-UPI-99',
+      speech_input: 'Can you please text me a UPI payment link on WhatsApp to pay right now?',
+      // Intent will be automatically parsed as REQUEST_PAYMENT_LINK!
+    }
+  });
+  await handleVoiceWebhook(linkWebhookReq, linkWebhookRes);
+  console.log('30. Voice Webhook - Payment Link Intent & WhatsApp UPI Dispatch:', {
+    passed: linkWebhookRes.body.success === true && 
+            linkWebhookRes.body.intent === 'REQUEST_PAYMENT_LINK' &&
+            linkWebhookRes.body.actions?.payment_link_sent === true &&
+            linkWebhookRes.body.actions?.whatsapp_link?.includes('https://wa.me/'),
+    parsedIntent: linkWebhookRes.body.intent,
+    paymentLinkUrl: linkWebhookRes.body.actions?.payment_link_url,
+    hasWhatsAppLink: Boolean(linkWebhookRes.body.actions?.whatsapp_link)
+  });
+
+  // 31. Test Voice Webhook: PROMISE_TO_PAY intent & Due Date Update
+  const { req: promiseReq, res: promiseRes } = mockReqRes({
+    merchantId: 1,
+    body: {
+      merchant_id: 1,
+      customer_id: 3, // David Chen
+      call_sid: 'CALL-TEST-PROMISE-88',
+      speech_input: 'I will be at the shop this Friday to pay the full amount.',
+      promised_date: '2026-11-20'
+    }
+  });
+  await handleVoiceWebhook(promiseReq, promiseRes);
+  console.log('31. Voice Webhook - Promise to Pay Intent & Due Date Scheduling:', {
+    passed: promiseRes.body.success === true && 
+            promiseRes.body.intent === 'PROMISE_TO_PAY' &&
+            promiseRes.body.actions?.promised_date === '2026-11-20',
+    parsedIntent: promiseRes.body.intent,
+    promisedDate: promiseRes.body.actions?.promised_date
+  });
+
+  // 32. Test Voice Webhook: REQUEST_CALLBACK intent & Scheduled Callback Queue
+  const scheduledTime = '2026-11-18T10:00:00.000Z';
+  const { req: callbackReq, res: callbackRes } = mockReqRes({
+    merchantId: 1,
+    body: {
+      merchant_id: 1,
+      customer_id: 2, // Emily Watson
+      call_sid: 'CALL-TEST-CALLBACK-77',
+      speech_input: 'I am driving right now, please call me tomorrow at 10 AM.',
+      callback_date: scheduledTime
+    }
+  });
+  await handleVoiceWebhook(callbackReq, callbackRes);
+  const { req: getSchedReq, res: getSchedRes } = mockReqRes({ merchantId: 1 });
+  await getScheduledCallbacks(getSchedReq, getSchedRes);
+  console.log('32. Voice Webhook - Callback Intent & Scheduled Debtor Queue:', {
+    passed: callbackRes.body.success === true && 
+            callbackRes.body.intent === 'REQUEST_CALLBACK' &&
+            getSchedRes.body.callbacks?.length >= 2,
+    parsedIntent: callbackRes.body.intent,
+    scheduledQueueCount: getSchedRes.body.count,
+    sampleScheduledDebtor: getSchedRes.body.callbacks?.[0]?.customer_name
+  });
+
+  console.log('\n🌟 ALL 32 SAAS PLATFORM MODULE CONTROLLERS VERIFIED AND WORKING PROPERLY! 🌟');
 }
 
 runUnitTests().catch(console.error);

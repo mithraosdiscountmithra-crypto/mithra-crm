@@ -71,6 +71,13 @@ A production-ready Multi-Tenant Loyalty and Membership SaaS CRM platform designe
    - **Floating Slide-Over Drawer**: Available anywhere in the app with quick inquiry pills ("Today's Sales?", "Low Stock Items?", "Draft WhatsApp Offer", "Customer Udhaar Balances").
    - **Custom Markdown Rendering**: Rich responses formatted with tables, bolding, bullet points, code blocks, and 1-click copy to clipboard.
 
+12. **AI Voice Agent & Debtor Callback Scheduler**:
+   - **Automated Outbound Voice Calling**: Triggers AI voice agents with dynamic merchant and debtor context (name, phone, outstanding ledger balance, and prompt script).
+   - **Speech Intent Recognition**: Natural Language webhook parser identifying customer intents (`REQUEST_PAYMENT_LINK`, `PROMISE_TO_PAY`, `REQUEST_CALLBACK`, `DISPUTE`, `NO_ANSWER`).
+   - **Automated WhatsApp UPI Payment Link Dispatch**: When debtors request an online link, automatically formats standard UPI URLs (`upi://pay?pa=...`) and deep-links directly into WhatsApp Web with pre-composed payment messages.
+   - **Scheduled Callbacks Queue**: Automatically records debtor callback requests (e.g. "I am driving, call tomorrow") with calendar timestamps and 1-click retry.
+   - **Interactive Telephony Simulator**: Merchant UI modal to test speech utterances, review call transcripts, inspect parsed intents, and view instant dispatch links.
+
 ---
 
 ## 📂 Project Structure
@@ -106,7 +113,8 @@ merchant-loyalty-saas/
 │   │   ├── whatsappController.js    # Bulk promotional campaigns & audience links
 │   │   ├── suppliersController.js   # Suppliers directory & Accounts Payable Khata
 │   │   ├── purchaseOrdersController.js # PO creation, WhatsApp links & stock inwarding
-│   │   └── aiController.js          # Smart Copilot powered by Google Gemini & Store Context
+│   │   ├── aiController.js          # Smart Copilot powered by Google Gemini & Store Context
+│   │   └── voiceController.js       # AI Voice Agent, intent parsing & WhatsApp UPI dispatch
 │   ├── routes/
 │   │   ├── index.js           # Central API router (/api)
 │   │   ├── authRoutes.js
@@ -122,7 +130,8 @@ merchant-loyalty-saas/
 │   │   ├── whatsappRoutes.js
 │   │   ├── suppliersRoutes.js
 │   │   ├── purchaseOrdersRoutes.js
-│   │   └── aiRoutes.js
+│   │   ├── aiRoutes.js
+│   │   └── voiceRoutes.js
 │   └── test-unit.js           # Automated controller verification test suite
 │
 └── client/                    # React & Tailwind CSS Frontend
@@ -330,7 +339,41 @@ CREATE INDEX idx_expenses_category ON expenses(merchant_id, category);
 CREATE INDEX idx_staff_merchant ON staff(merchant_id);
 CREATE INDEX idx_staff_attendance_merchant_date ON staff_attendance(merchant_id, attendance_date);
 CREATE INDEX idx_whatsapp_campaigns_merchant ON whatsapp_campaigns(merchant_id);
+CREATE INDEX idx_debtor_call_logs_merchant ON debtor_call_logs(merchant_id);
+CREATE INDEX idx_debtor_call_logs_customer ON debtor_call_logs(customer_id);
+CREATE INDEX idx_debtor_call_logs_intent ON debtor_call_logs(merchant_id, intent);
+CREATE INDEX idx_debtor_call_logs_callback ON debtor_call_logs(merchant_id, callback_scheduled_at);
 ```
+
+---
+
+## 📞 AI Voice Agent & Callback Scheduler Flow
+
+1. **Trigger AI Outbound Call to Debtor**:
+   `POST /api/voice/trigger-call`
+   ```json
+   {
+     "customer_id": 1
+   }
+   ```
+   - Fetches debtor's real-time ledger balance and phone number.
+   - Generates interactive prompt script for AI Telephony Voice Bot.
+
+2. **Telephony Webhook Response Processing**:
+   `POST /api/voice/webhook/call-response`
+   ```json
+   {
+     "merchant_id": 1,
+     "customer_id": 1,
+     "call_sid": "CALL-AI-123456",
+     "speech_input": "Can you please text me a UPI payment link on WhatsApp to pay right now?"
+   }
+   ```
+   - Automatically parses natural speech intents:
+     * `REQUEST_PAYMENT_LINK`: Formats UPI payment URI (`upi://pay?pa=...`) and dispatches pre-filled WhatsApp deep-link.
+     * `PROMISE_TO_PAY`: Reschedules payment due date in customer ledger.
+     * `REQUEST_CALLBACK`: Schedules future callback time in debtor queue.
+     * `DISPUTE`: Flags ledger account as disputed for manual review.
 
 ---
 

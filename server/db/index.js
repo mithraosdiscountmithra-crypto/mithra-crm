@@ -48,6 +48,7 @@ class MemoryStore {
     this.purchase_orders = [];
     this.purchase_order_items = [];
     this.supplier_ledgers = [];
+    this.debtor_call_logs = [];
     this.merchantSeq = 1;
     this.planSeq = 1;
     this.customerSeq = 1;
@@ -63,6 +64,7 @@ class MemoryStore {
     this.poSeq = 1;
     this.poItemSeq = 1;
     this.supplierLedgerSeq = 1;
+    this.callLogSeq = 1;
 
     this.seedDemoData();
   }
@@ -692,6 +694,59 @@ class MemoryStore {
       }
     ];
     this.supplier_ledgers.push(...supplierLedgers);
+
+    // Seed Debtor Call Logs
+    const callLogs = [
+      {
+        id: this.callLogSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[0].id, // Alex Rivera
+        call_sid: "CALL-VOICE-8811",
+        call_status: "COMPLETED",
+        intent: "PROMISE_TO_PAY",
+        transcript: "AI: Hello Alex, this is Artisan Coffee calling regarding your balance. Alex: I will be there this Friday to pay the $45. AI: Perfect, noted for Friday!",
+        summary: "Customer promised to pay $45 balance on Friday.",
+        promised_date: new Date(Date.now() + 3600 * 1000 * 24 * 4).toISOString().split('T')[0],
+        callback_scheduled_at: null,
+        payment_link_sent: false,
+        payment_link_url: null,
+        upi_intent_string: null,
+        created_at: new Date(Date.now() - 3600 * 1000 * 6)
+      },
+      {
+        id: this.callLogSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[2].id, // David Chen
+        call_sid: "CALL-VOICE-8822",
+        call_status: "COMPLETED",
+        intent: "REQUEST_PAYMENT_LINK",
+        transcript: "AI: Hello David, calling regarding your $40 coffee subscription ledger. David: Can you send me a UPI payment link on WhatsApp? AI: Dispatching your UPI link right now via WhatsApp!",
+        summary: "Debtor requested WhatsApp UPI payment link.",
+        promised_date: null,
+        callback_scheduled_at: null,
+        payment_link_sent: true,
+        payment_link_url: "https://pay.loyaltyhub.app/upi?pa=artisan@upi&am=40.00",
+        upi_intent_string: "upi://pay?pa=artisan@upi&pn=Artisan%20Coffee&am=40.00&cu=INR&tn=Khata-Settlement-3",
+        created_at: new Date(Date.now() - 3600 * 1000 * 3)
+      },
+      {
+        id: this.callLogSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[1].id, // Emily Watson
+        call_sid: "CALL-VOICE-8833",
+        call_status: "COMPLETED",
+        intent: "REQUEST_CALLBACK",
+        transcript: "AI: Hi Emily, calling from Artisan Coffee. Emily: I am in a work meeting right now, please call me tomorrow morning. AI: Scheduled a callback for tomorrow at 11 AM.",
+        summary: "Debtor requested callback tomorrow morning due to busy schedule.",
+        promised_date: null,
+        callback_scheduled_at: new Date(Date.now() + 3600 * 1000 * 24).toISOString(),
+        payment_link_sent: false,
+        payment_link_url: null,
+        upi_intent_string: null,
+        created_at: new Date(Date.now() - 3600 * 1000 * 1)
+      }
+    ];
+    this.debtor_call_logs.push(...callLogs);
   }
 }
 
@@ -1257,6 +1312,15 @@ function executeMemoryQuery(text, params) {
     return { rows: [], rowCount: initialLen - memoryStore.products.length };
   }
 
+  // 31a. Customer Ledger: WHERE customer_id = $1 AND merchant_id = $2
+  if (normalized.includes('FROM customer_ledgers') && normalized.includes('WHERE customer_id = $1 AND merchant_id = $2')) {
+    const [customer_id, merchant_id] = params;
+    const rows = memoryStore.customer_ledgers
+      .filter(l => l.merchant_id === parseInt(merchant_id, 10) && l.customer_id === parseInt(customer_id, 10))
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return { rows, rowCount: rows.length };
+  }
+
   // 31. Customer Ledger: Specific Customer History
   if (normalized.includes('FROM customer_ledgers cl') && (normalized.includes('cl.customer_id = $2') || normalized.includes('customer_id = $2'))) {
     const [merchant_id, customer_id] = params;
@@ -1739,6 +1803,83 @@ function executeMemoryQuery(text, params) {
     };
     memoryStore.supplier_ledgers.push(newLedger);
     return { rows: [newLedger], rowCount: 1 };
+  }
+
+  // 60. INSERT INTO debtor_call_logs
+  if (normalized.startsWith('INSERT INTO debtor_call_logs')) {
+    const [merchant_id, customer_id, ledger_id, call_sid, call_status, intent, transcript, summary, promised_date, callback_scheduled_at, payment_link_sent, payment_link_url, upi_intent_string] = params;
+    const newLog = {
+      id: memoryStore.callLogSeq++,
+      merchant_id: parseInt(merchant_id, 10),
+      customer_id: parseInt(customer_id, 10),
+      ledger_id: ledger_id ? parseInt(ledger_id, 10) : null,
+      call_sid: call_sid || `CALL-${Date.now().toString().slice(-6)}`,
+      call_status: call_status || 'COMPLETED',
+      intent: intent || 'GENERAL_INQUIRY',
+      transcript: transcript || '',
+      summary: summary || '',
+      promised_date: promised_date || null,
+      callback_scheduled_at: callback_scheduled_at || null,
+      payment_link_sent: Boolean(payment_link_sent),
+      payment_link_url: payment_link_url || null,
+      upi_intent_string: upi_intent_string || null,
+      created_at: new Date()
+    };
+    memoryStore.debtor_call_logs.push(newLog);
+    return { rows: [newLog], rowCount: 1 };
+  }
+
+  // 61. Scheduled Callbacks: FROM debtor_call_logs dcl ... WHERE dcl.merchant_id = $1 AND dcl.callback_scheduled_at IS NOT NULL
+  if (normalized.includes('FROM debtor_call_logs') && normalized.includes('callback_scheduled_at IS NOT NULL')) {
+    const merchant_id = parseInt(params[0], 10);
+    const rows = memoryStore.debtor_call_logs
+      .filter(l => l.merchant_id === merchant_id && l.callback_scheduled_at !== null)
+      .map(l => {
+        const cust = memoryStore.customers.find(c => c.id === l.customer_id);
+        return {
+          ...l,
+          customer_name: cust ? cust.name : 'Unknown Customer',
+          customer_phone: cust ? cust.phone : ''
+        };
+      })
+      .sort((a, b) => new Date(a.callback_scheduled_at) - new Date(b.callback_scheduled_at));
+    return { rows, rowCount: rows.length };
+  }
+
+  // 62. Debtor Call Logs List: FROM debtor_call_logs dcl ... WHERE dcl.merchant_id = $1
+  if (normalized.includes('FROM debtor_call_logs')) {
+    const merchant_id = parseInt(params[0], 10);
+    const customerId = params[1] ? parseInt(params[1], 10) : null;
+    let rows = memoryStore.debtor_call_logs.filter(l => l.merchant_id === merchant_id);
+    if (customerId) {
+      rows = rows.filter(l => l.customer_id === customerId);
+    }
+    const enriched = rows.map(l => {
+      const cust = memoryStore.customers.find(c => c.id === l.customer_id);
+      return {
+        ...l,
+        customer_name: cust ? cust.name : 'Unknown Customer',
+        customer_phone: cust ? cust.phone : ''
+      };
+    }).sort((a, b) => b.id - a.id);
+    return { rows: enriched, rowCount: enriched.length };
+  }
+
+  // 63. UPDATE customer_ledgers SET callback_date = $1, call_status = $2
+  if (normalized.includes('UPDATE customer_ledgers SET') && normalized.includes('call_status')) {
+    const [callback_date, call_status, payment_link_sent, customer_id, merchant_id] = params;
+    const cId = parseInt(customer_id, 10);
+    const mId = parseInt(merchant_id, 10);
+    let updatedCount = 0;
+    memoryStore.customer_ledgers.forEach(cl => {
+      if (cl.customer_id === cId && cl.merchant_id === mId) {
+        if (callback_date !== undefined) cl.callback_date = callback_date;
+        if (call_status !== undefined) cl.call_status = call_status;
+        if (payment_link_sent !== undefined) cl.payment_link_sent = Boolean(payment_link_sent);
+        updatedCount++;
+      }
+    });
+    return { rows: [], rowCount: updatedCount };
   }
 
   console.warn('[Unmatched Fallback Query]:', text);

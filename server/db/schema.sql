@@ -88,6 +88,9 @@ CREATE TABLE IF NOT EXISTS customer_ledgers (
     amount NUMERIC(10, 2) NOT NULL,
     notes TEXT,
     due_date DATE,
+    callback_date TIMESTAMP WITH TIME ZONE,
+    call_status VARCHAR(50) DEFAULT 'NOT_CALLED',
+    payment_link_sent BOOLEAN DEFAULT FALSE,
     status VARCHAR(20) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SETTLED')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -203,6 +206,25 @@ CREATE TABLE IF NOT EXISTS supplier_ledgers (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 16. Debtor Call Logs & Voice AI Webhook Records
+CREATE TABLE IF NOT EXISTS debtor_call_logs (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    ledger_id INTEGER REFERENCES customer_ledgers(id) ON DELETE SET NULL,
+    call_sid VARCHAR(100),
+    call_status VARCHAR(50) DEFAULT 'COMPLETED',
+    intent VARCHAR(50) NOT NULL CHECK (intent IN ('PROMISE_TO_PAY', 'REQUEST_CALLBACK', 'REQUEST_PAYMENT_LINK', 'DISPUTE', 'WRONG_NUMBER', 'NO_ANSWER', 'GENERAL_INQUIRY')),
+    transcript TEXT,
+    summary TEXT,
+    promised_date DATE,
+    callback_scheduled_at TIMESTAMP WITH TIME ZONE,
+    payment_link_sent BOOLEAN DEFAULT FALSE,
+    payment_link_url TEXT,
+    upi_intent_string TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for performance and fast POS lookup
 CREATE INDEX IF NOT EXISTS idx_merchants_email ON merchants(email);
 CREATE INDEX IF NOT EXISTS idx_customers_merchant_phone ON customers(merchant_id, phone);
@@ -229,3 +251,7 @@ CREATE INDEX IF NOT EXISTS idx_purchase_orders_status ON purchase_orders(merchan
 CREATE INDEX IF NOT EXISTS idx_po_items_po ON purchase_order_items(purchase_order_id);
 CREATE INDEX IF NOT EXISTS idx_supplier_ledgers_merchant ON supplier_ledgers(merchant_id);
 CREATE INDEX IF NOT EXISTS idx_supplier_ledgers_supplier ON supplier_ledgers(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_debtor_call_logs_merchant ON debtor_call_logs(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_debtor_call_logs_customer ON debtor_call_logs(customer_id);
+CREATE INDEX IF NOT EXISTS idx_debtor_call_logs_intent ON debtor_call_logs(merchant_id, intent);
+CREATE INDEX IF NOT EXISTS idx_debtor_call_logs_callback ON debtor_call_logs(merchant_id, callback_scheduled_at);
