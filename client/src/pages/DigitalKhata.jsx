@@ -8,7 +8,7 @@ import {
   ArrowDownLeft, 
   Plus, 
   Search, 
-  DollarSign, 
+  IndianRupee, 
   Clock, 
   CheckCircle, 
   AlertCircle, 
@@ -194,7 +194,7 @@ export default function DigitalKhata() {
     const netDue = customer.net_balance;
     const dueInfo = customer.due_date ? ` which was due on ${customer.due_date}` : '';
 
-    const message = `Hello ${customer.name}, this is a gentle reminder from ${storeName} regarding your pending Khata/Udhaar balance of $${netDue}${dueInfo}. Please clear the outstanding balance when convenient. Thank you!`;
+    const message = `Hello ${customer.name}, this is a gentle reminder from ${storeName} regarding your pending Khata/Udhaar balance of ₹${netDue}${dueInfo}. Please clear the outstanding balance when convenient. Thank you!`;
     const whatsappUrl = `https://wa.me/${rawPhone}?text=${encodeURIComponent(message)}`;
 
     window.open(whatsappUrl, '_blank');
@@ -357,7 +357,7 @@ export default function DigitalKhata() {
             <span>Market Outstanding</span>
             <ArrowUpRight className="w-4 h-4 text-rose-400" />
           </div>
-          <div className="text-2xl lg:text-3xl font-black text-rose-400 mt-2">${summary.totalOutstanding}</div>
+          <div className="text-2xl lg:text-3xl font-black text-rose-400 mt-2">₹{summary.totalOutstanding}</div>
           <div className="text-xs text-rose-300/80 mt-1">Pending collection from customers</div>
         </div>
 
@@ -366,7 +366,7 @@ export default function DigitalKhata() {
             <span>Total Collected</span>
             <ArrowDownLeft className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-2xl lg:text-3xl font-black text-emerald-400 mt-2">${summary.totalCollected}</div>
+          <div className="text-2xl lg:text-3xl font-black text-emerald-400 mt-2">₹{summary.totalCollected}</div>
           <div className="text-xs text-emerald-300/80 mt-1">Recovered credit payments</div>
         </div>
 
@@ -520,18 +520,18 @@ export default function DigitalKhata() {
                           </td>
 
                           <td className="px-6 py-4 font-mono text-rose-300 text-xs">
-                            ${c.total_given}
+                            ₹{c.total_given}
                           </td>
 
                           <td className="px-6 py-4 font-mono text-emerald-400 text-xs">
-                            ${c.total_paid}
+                            ₹{c.total_paid}
                           </td>
 
                           <td className="px-6 py-4">
                             {hasDue ? (
                               <div className="flex items-center gap-1.5">
                                 <span className="text-base font-black font-mono text-rose-400">
-                                  ${c.net_balance}
+                                  ₹{c.net_balance}
                                 </span>
                                 <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
                                   You'll Get
@@ -852,7 +852,7 @@ export default function DigitalKhata() {
               <option value="">-- Choose Customer --</option>
               {customersList.map((c) => (
                 <option key={c.customer_id} value={c.customer_id}>
-                  {c.name} ({c.phone}) — Net Due: ${c.net_balance}
+                  {c.name} ({c.phone}) — Net Due: ₹{c.net_balance}
                 </option>
               ))}
             </select>
@@ -871,7 +871,7 @@ export default function DigitalKhata() {
                 }`}
               >
                 <ArrowUpRight className="w-4 h-4" />
-                <span>You Gave ($ Udhaar)</span>
+                <span>You Gave (₹ Udhaar)</span>
               </button>
 
               <button
@@ -884,15 +884,15 @@ export default function DigitalKhata() {
                 }`}
               >
                 <ArrowDownLeft className="w-4 h-4" />
-                <span>You Received ($ Payment)</span>
+                <span>You Received (₹ Payment)</span>
               </button>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-300 mb-1">Amount ($) *</label>
+            <label className="block text-xs font-bold text-slate-300 mb-1">Amount (₹) *</label>
             <div className="relative">
-              <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <IndianRupee className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
               <input
                 type="number"
                 step="0.01"
@@ -971,7 +971,7 @@ export default function DigitalKhata() {
                       ? 'text-rose-400' 
                       : 'text-emerald-400'
                   }`}>
-                    ${selectedCustomerStatement.summary.netBalance}
+                    ₹{selectedCustomerStatement.summary.netBalance}
                   </div>
                 </div>
 
@@ -1060,7 +1060,7 @@ export default function DigitalKhata() {
                       <div className={`font-black text-sm font-mono ${
                         tx.transaction_type === 'GIVEN' ? 'text-rose-400' : 'text-emerald-400'
                       }`}>
-                        {tx.transaction_type === 'GIVEN' ? '+' : '-'}${parseFloat(tx.amount).toFixed(2)}
+                        {tx.transaction_type === 'GIVEN' ? '+' : '-'}₹{parseFloat(tx.amount).toFixed(2)}
                       </div>
                       <div className="mt-1">
                         {tx.status === 'SETTLED' ? (
@@ -1123,7 +1123,7 @@ export default function DigitalKhata() {
               <div className="text-right">
                 <div className="text-[10px] uppercase font-bold text-slate-400">Ledger Balance</div>
                 <div className="text-lg font-black font-mono text-rose-400">
-                  ${voiceDebtor.net_balance || voiceCallSession?.customer?.outstanding_balance || '0.00'}
+                  ₹{voiceDebtor.net_balance || voiceCallSession?.customer?.outstanding_balance || '0.00'}
                 </div>
               </div>
             </div>

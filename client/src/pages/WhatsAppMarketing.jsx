@@ -31,7 +31,7 @@ const PRESET_TEMPLATES = [
   {
     title: 'Festival Celebration Offer',
     icon: Gift,
-    text: 'Happy Holidays from the team at {store_name}, {customer_name}! 🎉 To celebrate, enjoy a complimentary artisanal treat with any purchase above $15. See you at the counter!'
+    text: 'Happy Holidays from the team at {store_name}, {customer_name}! 🎉 To celebrate, enjoy a complimentary artisanal treat with any purchase above ₹250. See you at the counter!'
   },
   {
     title: 'VIP Loyalty Reward',

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/client';
-import { Receipt, Search, RefreshCw, Calendar, DollarSign, Tag, TrendingDown } from 'lucide-react';
+import { Receipt, Search, RefreshCw, Calendar, IndianRupee, Tag, TrendingDown } from 'lucide-react';
 
 export default function RedemptionsList() {
   const [redemptions, setRedemptions] = useState([]);
@@ -60,15 +60,15 @@ export default function RedemptionsList() {
         <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
           <div>
             <div className="text-xs text-slate-400 font-semibold uppercase">Ledger Gross Sales</div>
-            <div className="text-xl font-black text-white mt-0.5">${totalSales.toFixed(2)}</div>
+            <div className="text-xl font-black text-white mt-0.5">₹{totalSales.toFixed(2)}</div>
           </div>
-          <DollarSign className="w-5 h-5 text-sky-400" />
+          <IndianRupee className="w-5 h-5 text-sky-400" />
         </div>
 
         <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
           <div>
             <div className="text-xs text-slate-400 font-semibold uppercase">Total Discounts Saved</div>
-            <div className="text-xl font-black text-rose-400 mt-0.5">-${totalDiscounts.toFixed(2)}</div>
+            <div className="text-xl font-black text-rose-400 mt-0.5">-₹{totalDiscounts.toFixed(2)}</div>
           </div>
           <TrendingDown className="w-5 h-5 text-rose-400" />
         </div>
@@ -76,7 +76,7 @@ export default function RedemptionsList() {
         <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
           <div>
             <div className="text-xs text-slate-400 font-semibold uppercase">Net Collected</div>
-            <div className="text-xl font-black text-emerald-400 mt-0.5">${totalNet.toFixed(2)}</div>
+            <div className="text-xl font-black text-emerald-400 mt-0.5">₹{totalNet.toFixed(2)}</div>
           </div>
           <Tag className="w-5 h-5 text-emerald-400" />
         </div>
@@ -132,13 +132,13 @@ export default function RedemptionsList() {
                         {r.customer_phone}
                       </td>
                       <td className="px-6 py-4 font-mono text-white">
-                        ${parseFloat(r.bill_amount).toFixed(2)}
+                        ₹{parseFloat(r.bill_amount).toFixed(2)}
                       </td>
                       <td className="px-6 py-4 font-mono text-rose-400 font-semibold">
-                        -${parseFloat(r.discount_given).toFixed(2)}
+                        -₹{parseFloat(r.discount_given).toFixed(2)}
                       </td>
                       <td className="px-6 py-4 font-mono text-emerald-400 font-bold">
-                        ${net.toFixed(2)}
+                        ₹{net.toFixed(2)}
                       </td>
                       <td className="px-6 py-4 text-xs text-slate-400">
                         {dateStr}

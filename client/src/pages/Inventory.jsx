@@ -9,7 +9,7 @@ import {
   CheckCircle, 
   AlertCircle, 
   TrendingUp, 
-  DollarSign, 
+  IndianRupee, 
   Edit3, 
   Trash2, 
   RefreshCw, 
@@ -276,9 +276,9 @@ export default function Inventory() {
         <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-md">
           <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase">
             <span>Inventory Cost Value</span>
-            <DollarSign className="w-4 h-4 text-emerald-400" />
+            <IndianRupee className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-2xl font-black text-emerald-400 mt-2">${costValuation.toFixed(2)}</div>
+          <div className="text-2xl font-black text-emerald-400 mt-2">₹{costValuation.toFixed(2)}</div>
           <div className="text-xs text-slate-500 mt-1">Purchase cost valuation</div>
         </div>
 
@@ -287,9 +287,9 @@ export default function Inventory() {
             <span>Estimated Retail Value</span>
             <TrendingUp className="w-4 h-4 text-indigo-400" />
           </div>
-          <div className="text-2xl font-black text-indigo-400 mt-2">${retailValuation.toFixed(2)}</div>
+          <div className="text-2xl font-black text-indigo-400 mt-2">₹{retailValuation.toFixed(2)}</div>
           <div className="text-xs text-slate-500 mt-1">
-            Potential margin: ${(retailValuation - costValuation).toFixed(2)}
+            Potential margin: ₹{(retailValuation - costValuation).toFixed(2)}
           </div>
         </div>
       </div>
@@ -392,11 +392,11 @@ export default function Inventory() {
                       </td>
 
                       <td className="px-6 py-4 font-mono text-slate-400 text-xs">
-                        ${purchase.toFixed(2)}
+                        ₹{purchase.toFixed(2)}
                       </td>
 
                       <td className="px-6 py-4 font-mono text-white font-bold text-sm">
-                        ${selling.toFixed(2)}
+                        ₹{selling.toFixed(2)}
                       </td>
 
                       <td className="px-6 py-4 text-xs font-semibold">
@@ -531,7 +531,7 @@ export default function Inventory() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Purchase Cost ($)</label>
+              <label className="block text-xs font-bold text-slate-300 mb-1">Purchase Cost (₹)</label>
               <input
                 type="number"
                 step="0.01"
@@ -542,7 +542,7 @@ export default function Inventory() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Selling / Retail Price ($) *</label>
+              <label className="block text-xs font-bold text-slate-300 mb-1">Selling / Retail Price (₹) *</label>
               <input
                 type="number"
                 step="0.01"

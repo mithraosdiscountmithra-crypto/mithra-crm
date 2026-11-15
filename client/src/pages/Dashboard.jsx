@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../api/client';
 import StatCard from '../components/StatCard';
 import { 
-  DollarSign, 
+  IndianRupee, 
   Users, 
   Award, 
   ShoppingBag, 
@@ -87,15 +87,15 @@ export default function Dashboard({ setActiveTab }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Gross Sales via CRM"
-          value={`$${stats.totalSales || '0.00'}`}
+          value={`₹${stats.totalSales || '0.00'}`}
           subtitle="Processed at checkout"
-          icon={DollarSign}
+          icon={IndianRupee}
           color="blue"
           trend="+18.4%"
         />
         <StatCard
           title="Discounts Provided"
-          value={`$${stats.totalDiscounts || '0.00'}`}
+          value={`₹${stats.totalDiscounts || '0.00'}`}
           subtitle="Saved by loyal customers"
           icon={TrendingUp}
           color="rose"
@@ -155,10 +155,10 @@ export default function Dashboard({ setActiveTab }) {
 
                   <div className="text-right">
                     <div className="text-sm font-bold text-white">
-                      ${parseFloat(tx.bill_amount).toFixed(2)}
+                      ₹{parseFloat(tx.bill_amount).toFixed(2)}
                     </div>
                     <div className="text-xs text-emerald-400 font-medium">
-                      -${parseFloat(tx.discount_given).toFixed(2)} discount
+                      -₹{parseFloat(tx.discount_given).toFixed(2)} discount
                     </div>
                   </div>
                 </div>

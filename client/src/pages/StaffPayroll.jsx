@@ -6,7 +6,7 @@ import {
   UserCheck, 
   UserX, 
   Clock, 
-  DollarSign, 
+  IndianRupee, 
   Plus, 
   Search, 
   Calendar, 
@@ -291,10 +291,10 @@ export default function StaffPayroll() {
         <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
             <span>Monthly Payroll Liability</span>
-            <DollarSign className="w-4 h-4 text-teal-400" />
+            <IndianRupee className="w-4 h-4 text-teal-400" />
           </div>
           <div className="text-2xl font-black text-teal-300 tracking-tight">
-            ${totalPayroll.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ₹{totalPayroll.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div className="text-[11px] text-slate-500">Fixed monthly employee commitments</div>
         </div>
@@ -399,7 +399,7 @@ export default function StaffPayroll() {
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono font-bold text-white text-sm">
-                        ${parseFloat(staff.monthly_salary || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        ₹{parseFloat(staff.monthly_salary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </td>
 
                       {/* 1-Click Attendance Buttons */}
@@ -506,7 +506,7 @@ export default function StaffPayroll() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-300 font-medium mb-1">Monthly Salary ($) *</label>
+              <label className="block text-slate-300 font-medium mb-1">Monthly Salary (₹) *</label>
               <input
                 type="number"
                 step="0.01"

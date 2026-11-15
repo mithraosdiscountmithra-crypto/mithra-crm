@@ -188,7 +188,7 @@ export default function MembershipPlans() {
               <div>
                 <h3 className="text-xl font-black text-white">{p.plan_name}</h3>
                 <div className="flex items-baseline gap-2 mt-2">
-                  <span className="text-3xl font-extrabold text-white">${parseFloat(p.price).toFixed(2)}</span>
+                  <span className="text-3xl font-extrabold text-white">₹{parseFloat(p.price).toFixed(2)}</span>
                   <span className="text-xs text-slate-400 font-medium">/ {p.validity_months} months</span>
                 </div>
               </div>
@@ -237,7 +237,7 @@ export default function MembershipPlans() {
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Price ($) *</label>
+              <label className="block text-xs font-bold text-slate-300 mb-1">Price (₹) *</label>
               <input
                 type="number"
                 step="0.01"

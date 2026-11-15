@@ -4,7 +4,7 @@ import Modal from '../components/Modal';
 import { 
   TrendingDown, 
   TrendingUp, 
-  DollarSign, 
+  IndianRupee, 
   Plus, 
   Search, 
   Trash2, 
@@ -226,10 +226,10 @@ export default function Expenses() {
         <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
             <span>Gross Sales (POS)</span>
-            <DollarSign className="w-4 h-4 text-sky-400" />
+            <IndianRupee className="w-4 h-4 text-sky-400" />
           </div>
-          <div className="text-2xl font-black text-white tracking-tight">${grossSales}</div>
-          <div className="text-[11px] text-slate-500">Less discounts: -${discounts}</div>
+          <div className="text-2xl font-black text-white tracking-tight">₹{grossSales}</div>
+          <div className="text-[11px] text-slate-500">Less discounts: -₹{discounts}</div>
         </div>
 
         {/* Net Revenue */}
@@ -238,7 +238,7 @@ export default function Expenses() {
             <span>Net Sales Revenue</span>
             <TrendingUp className="w-4 h-4 text-indigo-400" />
           </div>
-          <div className="text-2xl font-black text-indigo-300 tracking-tight">${netRev}</div>
+          <div className="text-2xl font-black text-indigo-300 tracking-tight">₹{netRev}</div>
           <div className="text-[11px] text-slate-500">Realized shop income</div>
         </div>
 
@@ -248,7 +248,7 @@ export default function Expenses() {
             <span>Total Expenses</span>
             <TrendingDown className="w-4 h-4 text-rose-400" />
           </div>
-          <div className="text-2xl font-black text-rose-400 tracking-tight">${totalExp}</div>
+          <div className="text-2xl font-black text-rose-400 tracking-tight">₹{totalExp}</div>
           <div className="text-[11px] text-slate-500">{expenses.length} recorded line items</div>
         </div>
 
@@ -267,7 +267,7 @@ export default function Expenses() {
             </span>
           </div>
           <div className="text-2xl font-black tracking-tight">
-            {isProfitable ? `+$${netProfit}` : `-$${Math.abs(parseFloat(netProfit)).toFixed(2)}`}
+            {isProfitable ? `+₹${netProfit}` : `-₹${Math.abs(parseFloat(netProfit)).toFixed(2)}`}
           </div>
           <div className="text-[11px] text-slate-400">
             {isProfitable ? 'Healthy operating surplus' : 'Expenses exceed net sales'}
@@ -295,7 +295,7 @@ export default function Expenses() {
                 <div key={idx} className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-slate-300 truncate">{cat.category}</span>
-                    <span className="font-mono font-bold text-white">${parseFloat(cat.total).toFixed(2)}</span>
+                    <span className="font-mono font-bold text-white">₹{parseFloat(cat.total).toFixed(2)}</span>
                   </div>
                   <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
                     <div 
@@ -399,7 +399,7 @@ export default function Expenses() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-right font-mono font-bold text-rose-400 text-sm">
-                      ${parseFloat(exp.amount).toFixed(2)}
+                      ₹{parseFloat(exp.amount).toFixed(2)}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <button
@@ -454,7 +454,7 @@ export default function Expenses() {
             </div>
 
             <div>
-              <label className="block text-slate-300 font-medium mb-1">Amount ($) *</label>
+              <label className="block text-slate-300 font-medium mb-1">Amount (₹) *</label>
               <input
                 type="number"
                 step="0.01"

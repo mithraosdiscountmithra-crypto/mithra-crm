@@ -350,7 +350,7 @@ export default function Customers() {
               <option value="">No initial membership (Standard Customer)</option>
               {plans.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.plan_name} (${p.price} / {p.validity_months} mos • {p.discount_percent}% OFF)
+                  {p.plan_name} (₹{p.price} / {p.validity_months} mos • {p.discount_percent}% OFF)
                 </option>
               ))}
             </select>
@@ -391,7 +391,7 @@ export default function Customers() {
               <option value="">-- Choose Plan --</option>
               {plans.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.plan_name} (${p.price} / {p.validity_months} months • {p.discount_percent}% OFF)
+                  {p.plan_name} (₹{p.price} / {p.validity_months} months • {p.discount_percent}% OFF)
                 </option>
               ))}
             </select>

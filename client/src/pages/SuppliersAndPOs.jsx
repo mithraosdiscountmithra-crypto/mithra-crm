@@ -8,7 +8,7 @@ import {
   FileText, 
   Plus, 
   Search, 
-  DollarSign, 
+  IndianRupee, 
   Clock, 
   CheckCircle2, 
   AlertCircle, 
@@ -493,10 +493,10 @@ export default function SuppliersAndPOs() {
         <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
             <span>Accounts Payable (You Owe)</span>
-            <DollarSign className="w-4 h-4 text-rose-400" />
+            <IndianRupee className="w-4 h-4 text-rose-400" />
           </div>
           <div className="text-2xl font-black text-rose-400 tracking-tight">
-            ${supplierSummary.totalPayable || '0.00'}
+            ₹{supplierSummary.totalPayable || '0.00'}
           </div>
           <div className="text-[11px] text-slate-500">Across {suppliers.length} active suppliers</div>
         </div>
@@ -510,7 +510,7 @@ export default function SuppliersAndPOs() {
           <div className="text-2xl font-black text-white tracking-tight">
             {purchaseOrders.length} Orders
           </div>
-          <div className="text-[11px] text-slate-500">${poSummary.totalPOAmount || '0.00'} procurement volume</div>
+          <div className="text-[11px] text-slate-500">₹{poSummary.totalPOAmount || '0.00'} procurement volume</div>
         </div>
 
         {/* Inwarding Status */}
@@ -658,7 +658,7 @@ export default function SuppliersAndPOs() {
                           {po.item_count} items
                         </td>
                         <td className="py-3 px-4 text-right font-mono font-bold text-white text-sm">
-                          ${parseFloat(po.total_amount).toFixed(2)}
+                          ₹{parseFloat(po.total_amount).toFixed(2)}
                         </td>
                         <td className="py-3 px-4 text-center">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${
@@ -790,12 +790,12 @@ export default function SuppliersAndPOs() {
                           <div className={`text-base font-black font-mono ${
                             hasPendingDues ? 'text-rose-400' : 'text-emerald-400'
                           }`}>
-                            ${Math.abs(netBal).toFixed(2)}
+                            ₹{Math.abs(netBal).toFixed(2)}
                           </div>
                         </div>
                         <div className="text-right text-[11px] text-slate-500">
-                          <div>Billed: ${sup.total_billed || '0.00'}</div>
-                          <div>Paid: ${sup.total_paid || '0.00'}</div>
+                          <div>Billed: ₹{sup.total_billed || '0.00'}</div>
+                          <div>Paid: ₹{sup.total_paid || '0.00'}</div>
                         </div>
                       </div>
                     </div>
@@ -978,7 +978,7 @@ export default function SuppliersAndPOs() {
                       type="number"
                       step="0.01"
                       min="0"
-                      placeholder="Cost $"
+                      placeholder="Cost ₹"
                       value={item.unit_cost}
                       onChange={(e) => handleItemFieldChange(idx, 'unit_cost', e.target.value)}
                       required
@@ -987,7 +987,7 @@ export default function SuppliersAndPOs() {
                   </div>
 
                   <div className="w-20 text-right font-mono font-bold text-white">
-                    ${(parseFloat(item.quantity || 0) * parseFloat(item.unit_cost || 0)).toFixed(2)}
+                    ₹{(parseFloat(item.quantity || 0) * parseFloat(item.unit_cost || 0)).toFixed(2)}
                   </div>
 
                   <button
@@ -1017,7 +1017,7 @@ export default function SuppliersAndPOs() {
           <div className="flex items-center justify-between pt-3 border-t border-slate-800">
             <div className="text-sm">
               <span className="text-slate-400">Total Purchase Order: </span>
-              <strong className="text-white font-mono font-black text-lg">${calculatePoTotal().toFixed(2)}</strong>
+              <strong className="text-white font-mono font-black text-lg">₹{calculatePoTotal().toFixed(2)}</strong>
             </div>
 
             <div className="flex items-center gap-2">
@@ -1081,11 +1081,11 @@ export default function SuppliersAndPOs() {
                     <div>
                       <div className="font-semibold text-white">{it.item_name}</div>
                       <div className="text-slate-500 text-[11px] font-mono">
-                        {it.quantity} units @ ${parseFloat(it.unit_cost).toFixed(2)} each
+                        {it.quantity} units @ ₹{parseFloat(it.unit_cost).toFixed(2)} each
                       </div>
                     </div>
                     <div className="font-mono font-bold text-white">
-                      ${parseFloat(it.subtotal || (it.quantity * it.unit_cost)).toFixed(2)}
+                      ₹{parseFloat(it.subtotal || (it.quantity * it.unit_cost)).toFixed(2)}
                     </div>
                   </div>
                 ))}
@@ -1095,7 +1095,7 @@ export default function SuppliersAndPOs() {
             {/* Total */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800 font-mono text-sm">
               <span className="font-bold text-slate-300">Total Order Amount</span>
-              <span className="font-black text-white text-lg">${parseFloat(viewingPO.total_amount).toFixed(2)}</span>
+              <span className="font-black text-white text-lg">₹{parseFloat(viewingPO.total_amount).toFixed(2)}</span>
             </div>
 
             {/* 1-Click WhatsApp Dispatch Button */}
@@ -1276,17 +1276,17 @@ export default function SuppliersAndPOs() {
               <div>
                 <div className="text-[11px] uppercase font-bold text-slate-400">Net Balance Payable</div>
                 <div className="text-2xl font-mono font-black text-rose-400">
-                  ${statementData?.netPayable || '0.00'}
+                  ₹{statementData?.netPayable || '0.00'}
                 </div>
               </div>
               <div className="flex items-center gap-4 text-right">
                 <div>
                   <div className="text-[11px] text-slate-500">Total Billed (Bills)</div>
-                  <div className="text-sm font-mono font-bold text-white">${statementData?.totalBilled || '0.00'}</div>
+                  <div className="text-sm font-mono font-bold text-white">₹{statementData?.totalBilled || '0.00'}</div>
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Total Settled (Paid)</div>
-                  <div className="text-sm font-mono font-bold text-emerald-400">${statementData?.totalPaid || '0.00'}</div>
+                  <div className="text-sm font-mono font-bold text-emerald-400">₹{statementData?.totalPaid || '0.00'}</div>
                 </div>
               </div>
             </div>
@@ -1340,7 +1340,7 @@ export default function SuppliersAndPOs() {
                           <td className={`py-2.5 px-3 text-right font-mono font-bold ${
                             isBill ? 'text-rose-400' : 'text-emerald-400'
                           }`}>
-                            {isBill ? `+$${parseFloat(entry.amount).toFixed(2)}` : `-$${parseFloat(entry.amount).toFixed(2)}`}
+                            {isBill ? `+₹${parseFloat(entry.amount).toFixed(2)}` : `-₹${parseFloat(entry.amount).toFixed(2)}`}
                           </td>
                         </tr>
                       );
@@ -1380,7 +1380,7 @@ export default function SuppliersAndPOs() {
       >
         <form onSubmit={handleRecordPayment} className="space-y-4 text-xs">
           <div>
-            <label className="block text-slate-300 font-medium mb-1">Amount Paid ($) *</label>
+            <label className="block text-slate-300 font-medium mb-1">Amount Paid (₹) *</label>
             <input
               type="number"
               step="0.01"

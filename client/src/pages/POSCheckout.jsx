@@ -9,7 +9,7 @@ import {
   Cake, 
   Heart, 
   Crown, 
-  DollarSign, 
+  IndianRupee, 
   Sparkles, 
   UserPlus, 
   Printer, 
@@ -97,7 +97,7 @@ export default function POSCheckout() {
     }
 
     if (originalBill <= 0) {
-      setError('Please enter a bill amount greater than $0.');
+      setError('Please enter a bill amount greater than ₹0.');
       return;
     }
 
@@ -344,10 +344,10 @@ export default function POSCheckout() {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Gross Bill Amount ($)
+                  Gross Bill Amount (₹)
                 </label>
                 <div className="relative">
-                  <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
                     type="number"
                     step="0.01"
@@ -397,16 +397,16 @@ export default function POSCheckout() {
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
                 <div className="flex justify-between text-sm text-slate-400">
                   <span>Original Bill:</span>
-                  <span className="font-mono text-white font-medium">${originalBill.toFixed(2)}</span>
+                  <span className="font-mono text-white font-medium">₹{originalBill.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-emerald-400 font-medium">
                   <span>Loyalty Discount ({effectiveDiscountPercent}%):</span>
-                  <span className="font-mono">-${discountAmount.toFixed(2)}</span>
+                  <span className="font-mono">-₹{discountAmount.toFixed(2)}</span>
                 </div>
                 <div className="pt-2 border-t border-slate-800 flex justify-between items-baseline">
                   <span className="text-base font-bold text-white">Net Total to Collect:</span>
                   <span className="text-2xl font-black text-emerald-400 font-mono">
-                    ${finalPayable.toFixed(2)}
+                    ₹{finalPayable.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -465,15 +465,15 @@ export default function POSCheckout() {
               </div>
               <div className="pt-2 border-t border-slate-800 flex justify-between">
                 <span className="text-slate-400">Original Total:</span>
-                <span className="font-mono text-slate-300">${receipt.bill_amount}</span>
+                <span className="font-mono text-slate-300">₹{receipt.bill_amount}</span>
               </div>
               <div className="flex justify-between text-emerald-400 font-bold">
                 <span>Discount Saved ({receipt.discount_percent}%):</span>
-                <span className="font-mono">-${receipt.discount_given}</span>
+                <span className="font-mono">-₹{receipt.discount_given}</span>
               </div>
               <div className="pt-2 border-t border-slate-800 flex justify-between text-sm font-extrabold text-white">
                 <span>Amount Paid:</span>
-                <span className="font-mono text-emerald-400 text-base">${receipt.net_payable}</span>
+                <span className="font-mono text-emerald-400 text-base">₹{receipt.net_payable}</span>
               </div>
             </div>
 
