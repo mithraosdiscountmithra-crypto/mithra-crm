@@ -65,6 +65,12 @@ A production-ready Multi-Tenant Loyalty and Membership SaaS CRM platform designe
    - **Automated Inventory Inwarding**: Marking a PO as `RECEIVED` automatically updates received dates and increments product `stock_quantity` in the store catalog.
    - **Supplier Khata Ledger**: Real-time accounts payable tracking (`BILLS - PAYMENTS`), statement view, and settlement recording.
 
+11. **Smart AI Business Assistant (Copilot)**:
+   - **Real-Time Store Knowledge**: AI Copilot directly queries the logged-in merchant's database (POS sales, discounts, low-stock inventory, customer debts, profit margins, staff attendance, and supplier balances).
+   - **Google Gemini 1.5 Integration**: Uses `GEMINI_API_KEY` for natural language reasoning with automatic fallback to an embedded Context Intelligence Engine for zero-config and offline usage.
+   - **Floating Slide-Over Drawer**: Available anywhere in the app with quick inquiry pills ("Today's Sales?", "Low Stock Items?", "Draft WhatsApp Offer", "Customer Udhaar Balances").
+   - **Custom Markdown Rendering**: Rich responses formatted with tables, bolding, bullet points, code blocks, and 1-click copy to clipboard.
+
 ---
 
 ## 📂 Project Structure
@@ -77,7 +83,7 @@ merchant-loyalty-saas/
 ├── server/                    # Node.js & Express Backend
 │   ├── package.json
 │   ├── index.js               # Express entrypoint, middleware, and route mounting
-│   ├── .env.example           # Neon DB connection & JWT environment template
+│   ├── .env.example           # Neon DB connection, JWT & Gemini API Key template
 │   ├── db/
 │   │   ├── schema.sql         # PostgreSQL DDL with indexes and constraints
 │   │   ├── index.js           # pg.Pool with Neon SSL & fallback multi-tenant engine
@@ -99,7 +105,8 @@ merchant-loyalty-saas/
 │   │   ├── staffController.js       # Staff directory, daily attendance & payroll
 │   │   ├── whatsappController.js    # Bulk promotional campaigns & audience links
 │   │   ├── suppliersController.js   # Suppliers directory & Accounts Payable Khata
-│   │   └── purchaseOrdersController.js # PO creation, WhatsApp links & stock inwarding
+│   │   ├── purchaseOrdersController.js # PO creation, WhatsApp links & stock inwarding
+│   │   └── aiController.js          # Smart Copilot powered by Google Gemini & Store Context
 │   ├── routes/
 │   │   ├── index.js           # Central API router (/api)
 │   │   ├── authRoutes.js
@@ -114,7 +121,8 @@ merchant-loyalty-saas/
 │   │   ├── staffRoutes.js
 │   │   ├── whatsappRoutes.js
 │   │   ├── suppliersRoutes.js
-│   │   └── purchaseOrdersRoutes.js
+│   │   ├── purchaseOrdersRoutes.js
+│   │   └── aiRoutes.js
 │   └── test-unit.js           # Automated controller verification test suite
 │
 └── client/                    # React & Tailwind CSS Frontend
@@ -131,10 +139,12 @@ merchant-loyalty-saas/
         ├── context/
         │   └── AuthContext.jsx# Authentication session and tenant state
         ├── components/
-        │   ├── Navbar.jsx     # Top bar with store info & quick POS toggle
-        │   ├── Sidebar.jsx    # Navigation menu
-        │   ├── StatCard.jsx   # KPI metric card
-        │   └── Modal.jsx      # Reusable dialog component
+        │   ├── Navbar.jsx           # Top bar with store info & quick POS toggle
+        │   ├── Sidebar.jsx          # Navigation menu
+        │   ├── StatCard.jsx         # KPI metric card
+        │   ├── Modal.jsx            # Reusable dialog component
+        │   ├── AICopilotDrawer.jsx  # Floating AI Business Copilot slide-over chat
+        │   └── MarkdownRenderer.jsx # Markdown parser for headers, tables & code
         └── pages/
             ├── Dashboard.jsx        # Sales, discounts, and customer stats
             ├── POSCheckout.jsx      # High-speed cashier checkout terminal

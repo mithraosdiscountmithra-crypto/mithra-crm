@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
+import AICopilotDrawer from './components/AICopilotDrawer';
 import Dashboard from './pages/Dashboard';
 import POSCheckout from './pages/POSCheckout';
 import Customers from './pages/Customers';
@@ -149,6 +150,9 @@ export default function App() {
           Plans
         </button>
       </div>
+
+      {/* Global Floating AI Copilot Assistant */}
+      <AICopilotDrawer />
     </div>
   );
 }

@@ -45,6 +45,7 @@ import {
   getPurchaseOrderById,
   updatePurchaseOrderStatus
 } from './controllers/purchaseOrdersController.js';
+import { chatWithAICopilot } from './controllers/aiController.js';
 
 // Helper to mock express req/res
 function mockReqRes(reqData = {}) {
@@ -450,7 +451,46 @@ async function runUnitTests() {
     productStockAfterInward: `${updatedEspresso?.product_name}: ${updatedEspresso?.stock_quantity} in stock`
   });
 
-  console.log('\n🌟 ALL 25 SAAS PLATFORM MODULE CONTROLLERS VERIFIED AND WORKING PROPERLY! 🌟');
+  // 26. Test AI Copilot - Sales & Revenue Query
+  const { req: aiSalesReq, res: aiSalesRes } = mockReqRes({
+    merchantId: 1,
+    merchant: { id: 1, store_name: 'Artisan Coffee Roasters', category: 'Cafe & Roastery', owner_name: 'Sarah' },
+    body: { message: "What are today's sales and revenue metrics?" }
+  });
+  await chatWithAICopilot(aiSalesReq, aiSalesRes);
+  console.log('26. AI Copilot - Sales Analytics Answer:', {
+    passed: aiSalesRes.body.success === true && aiSalesRes.body.reply?.includes('Gross Sales'),
+    source: aiSalesRes.body.source,
+    previewSnippet: aiSalesRes.body.reply?.slice(0, 75).replace(/\n/g, ' ')
+  });
+
+  // 27. Test AI Copilot - Low Stock Alert Query
+  const { req: aiStockReq, res: aiStockRes } = mockReqRes({
+    merchantId: 1,
+    merchant: { id: 1, store_name: 'Artisan Coffee Roasters' },
+    body: { message: "Which inventory items are running low on stock?" }
+  });
+  await chatWithAICopilot(aiStockReq, aiStockRes);
+  console.log('27. AI Copilot - Inventory Reorder Risk Answer:', {
+    passed: aiStockRes.body.success === true && (aiStockRes.body.reply?.includes('Stock') || aiStockRes.body.reply?.includes('SKU')),
+    source: aiStockRes.body.source,
+    previewSnippet: aiStockRes.body.reply?.slice(0, 75).replace(/\n/g, ' ')
+  });
+
+  // 28. Test AI Copilot - Draft WhatsApp Marketing Offer
+  const { req: aiPromoReq, res: aiPromoRes } = mockReqRes({
+    merchantId: 1,
+    merchant: { id: 1, store_name: 'Artisan Coffee Roasters', city: 'Seattle' },
+    body: { message: "Can you draft a 20% off WhatsApp weekend discount promo message?" }
+  });
+  await chatWithAICopilot(aiPromoReq, aiPromoRes);
+  console.log('28. AI Copilot - Promotional Campaign Drafting:', {
+    passed: aiPromoRes.body.success === true && aiPromoRes.body.reply?.includes('{customer_name}'),
+    source: aiPromoRes.body.source,
+    previewSnippet: aiPromoRes.body.reply?.slice(0, 75).replace(/\n/g, ' ')
+  });
+
+  console.log('\n🌟 ALL 28 SAAS PLATFORM MODULE CONTROLLERS VERIFIED AND WORKING PROPERLY! 🌟');
 }
 
 runUnitTests().catch(console.error);

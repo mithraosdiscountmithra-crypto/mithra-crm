@@ -12,6 +12,7 @@ import staffRoutes from './staffRoutes.js';
 import whatsappRoutes from './whatsappRoutes.js';
 import suppliersRoutes from './suppliersRoutes.js';
 import purchaseOrdersRoutes from './purchaseOrdersRoutes.js';
+import aiRoutes from './aiRoutes.js';
 
 const router = Router();
 
@@ -28,6 +29,7 @@ router.use('/staff', staffRoutes);
 router.use('/whatsapp', whatsappRoutes);
 router.use('/suppliers', suppliersRoutes);
 router.use('/purchase-orders', purchaseOrdersRoutes);
+router.use('/ai', aiRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {

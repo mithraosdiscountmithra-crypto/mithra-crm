@@ -141,6 +141,12 @@ export const api = {
     getById: (id) => request(`/purchase-orders/${id}`),
     create: (data) => request('/purchase-orders', { method: 'POST', body: data }),
     updateStatus: (id, status) => request(`/purchase-orders/${id}/status`, { method: 'PUT', body: { status } }),
+  },
+
+  // AI Business Assistant (Copilot)
+  ai: {
+    chat: (message, conversationHistory = []) =>
+      request('/ai/chat', { method: 'POST', body: { message, conversationHistory } }),
   }
 };
 
