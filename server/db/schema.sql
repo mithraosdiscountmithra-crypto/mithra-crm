@@ -144,6 +144,65 @@ CREATE TABLE IF NOT EXISTS whatsapp_campaigns (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 12. Suppliers (Wholesalers & Vendors Directory)
+CREATE TABLE IF NOT EXISTS suppliers (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    contact_person VARCHAR(255),
+    phone VARCHAR(50),
+    email VARCHAR(255),
+    address TEXT,
+    gst_or_tax_id VARCHAR(100),
+    payment_terms VARCHAR(100) DEFAULT 'Net 30',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 13. Purchase Orders (Procurement from Suppliers)
+CREATE TABLE IF NOT EXISTS purchase_orders (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+    supplier_id INTEGER NOT NULL REFERENCES suppliers(id) ON DELETE CASCADE,
+    po_number VARCHAR(100) NOT NULL,
+    status VARCHAR(50) DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'SENT', 'RECEIVED', 'CANCELLED')),
+    total_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    order_date DATE DEFAULT CURRENT_DATE,
+    expected_delivery_date DATE,
+    received_date DATE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_merchant_po_number UNIQUE (merchant_id, po_number)
+);
+
+-- 14. Purchase Order Items (Line Items with Products)
+CREATE TABLE IF NOT EXISTS purchase_order_items (
+    id SERIAL PRIMARY KEY,
+    purchase_order_id INTEGER NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+    item_name VARCHAR(255) NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    unit_cost NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    subtotal NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 15. Supplier Ledgers / Khata (Billed & Paid Accounts Payable)
+CREATE TABLE IF NOT EXISTS supplier_ledgers (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+    supplier_id INTEGER NOT NULL REFERENCES suppliers(id) ON DELETE CASCADE,
+    purchase_order_id INTEGER REFERENCES purchase_orders(id) ON DELETE SET NULL,
+    transaction_type VARCHAR(20) NOT NULL CHECK (transaction_type IN ('BILL', 'PAYMENT')),
+    amount NUMERIC(10, 2) NOT NULL,
+    notes TEXT,
+    reference_no VARCHAR(100),
+    payment_date DATE DEFAULT CURRENT_DATE,
+    payment_method VARCHAR(50) DEFAULT 'BANK_TRANSFER',
+    status VARCHAR(20) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SETTLED')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for performance and fast POS lookup
 CREATE INDEX IF NOT EXISTS idx_merchants_email ON merchants(email);
 CREATE INDEX IF NOT EXISTS idx_customers_merchant_phone ON customers(merchant_id, phone);
@@ -163,3 +222,10 @@ CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(merchant_id, catego
 CREATE INDEX IF NOT EXISTS idx_staff_merchant ON staff(merchant_id);
 CREATE INDEX IF NOT EXISTS idx_staff_attendance_lookup ON staff_attendance(merchant_id, attendance_date);
 CREATE INDEX IF NOT EXISTS idx_whatsapp_campaigns_merchant ON whatsapp_campaigns(merchant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_suppliers_merchant ON suppliers(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_merchant ON purchase_orders(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_supplier ON purchase_orders(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_status ON purchase_orders(merchant_id, status);
+CREATE INDEX IF NOT EXISTS idx_po_items_po ON purchase_order_items(purchase_order_id);
+CREATE INDEX IF NOT EXISTS idx_supplier_ledgers_merchant ON supplier_ledgers(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_supplier_ledgers_supplier ON supplier_ledgers(supplier_id);

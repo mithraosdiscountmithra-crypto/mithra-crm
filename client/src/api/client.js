@@ -122,6 +122,25 @@ export const api = {
     createCampaign: (data) => request('/whatsapp/campaigns', { method: 'POST', body: data }),
     getAudience: (targetSegment = 'ALL', templateMessage = '') =>
       request(`/whatsapp/audience?target_segment=${encodeURIComponent(targetSegment)}&template_message=${encodeURIComponent(templateMessage)}`),
+  },
+
+  // Suppliers & Vendor Management
+  suppliers: {
+    getAll: () => request('/suppliers'),
+    getById: (id) => request(`/suppliers/${id}`),
+    create: (data) => request('/suppliers', { method: 'POST', body: data }),
+    update: (id, data) => request(`/suppliers/${id}`, { method: 'PUT', body: data }),
+    delete: (id) => request(`/suppliers/${id}`, { method: 'DELETE' }),
+    getLedger: (id) => request(`/suppliers/${id}/ledger`),
+    recordPayment: (data) => request('/suppliers/payment', { method: 'POST', body: data }),
+  },
+
+  // Purchase Orders & Inwarding
+  purchaseOrders: {
+    getAll: () => request('/purchase-orders'),
+    getById: (id) => request(`/purchase-orders/${id}`),
+    create: (data) => request('/purchase-orders', { method: 'POST', body: data }),
+    updateStatus: (id, status) => request(`/purchase-orders/${id}/status`, { method: 'PUT', body: { status } }),
   }
 };
 

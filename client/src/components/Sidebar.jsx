@@ -12,7 +12,8 @@ import {
   Database,
   TrendingDown,
   UserCheck,
-  MessageSquare
+  MessageSquare,
+  Truck
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab }) {
@@ -21,6 +22,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
     { id: 'pos', label: 'POS Checkout', icon: ShoppingCart, badge: 'Fast' },
     { id: 'udhaar', label: 'Digital Khata / Udhaar', icon: BookOpen, badge: 'Credit' },
     { id: 'inventory', label: 'Inventory & Stock', icon: Package },
+    { id: 'suppliers', label: 'Suppliers & POs', icon: Truck, badge: 'Procure' },
     { id: 'expenses', label: 'Expenses & P&L', icon: TrendingDown, badge: 'P&L' },
     { id: 'staff', label: 'Staff & Attendance', icon: UserCheck, badge: 'Team' },
     { id: 'whatsapp', label: 'WhatsApp Marketing', icon: MessageSquare, badge: 'Bulk' },

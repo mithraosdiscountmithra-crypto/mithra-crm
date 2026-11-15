@@ -11,6 +11,7 @@ import DigitalKhata from './pages/DigitalKhata';
 import Expenses from './pages/Expenses';
 import StaffPayroll from './pages/StaffPayroll';
 import WhatsAppMarketing from './pages/WhatsAppMarketing';
+import SuppliersAndPOs from './pages/SuppliersAndPOs';
 import RedemptionsList from './pages/RedemptionsList';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
@@ -54,6 +55,7 @@ export default function App() {
           {activeTab === 'pos' && <POSCheckout />}
           {activeTab === 'udhaar' && <DigitalKhata />}
           {activeTab === 'inventory' && <Inventory />}
+          {activeTab === 'suppliers' && <SuppliersAndPOs />}
           {activeTab === 'expenses' && <Expenses />}
           {activeTab === 'staff' && <StaffPayroll />}
           {activeTab === 'whatsapp' && <WhatsAppMarketing />}
@@ -81,6 +83,14 @@ export default function App() {
           }`}
         >
           POS
+        </button>
+        <button
+          onClick={() => setActiveTab('suppliers')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
+            activeTab === 'suppliers' ? 'bg-sky-600 text-white' : 'text-slate-400'
+          }`}
+        >
+          Suppliers
         </button>
         <button
           onClick={() => setActiveTab('udhaar')}

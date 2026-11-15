@@ -10,6 +10,8 @@ import udhaarRoutes from './udhaarRoutes.js';
 import expensesRoutes from './expensesRoutes.js';
 import staffRoutes from './staffRoutes.js';
 import whatsappRoutes from './whatsappRoutes.js';
+import suppliersRoutes from './suppliersRoutes.js';
+import purchaseOrdersRoutes from './purchaseOrdersRoutes.js';
 
 const router = Router();
 
@@ -24,6 +26,8 @@ router.use('/udhaar', udhaarRoutes);
 router.use('/expenses', expensesRoutes);
 router.use('/staff', staffRoutes);
 router.use('/whatsapp', whatsappRoutes);
+router.use('/suppliers', suppliersRoutes);
+router.use('/purchase-orders', purchaseOrdersRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {

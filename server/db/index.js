@@ -44,6 +44,10 @@ class MemoryStore {
     this.staff = [];
     this.staff_attendance = [];
     this.whatsapp_campaigns = [];
+    this.suppliers = [];
+    this.purchase_orders = [];
+    this.purchase_order_items = [];
+    this.supplier_ledgers = [];
     this.merchantSeq = 1;
     this.planSeq = 1;
     this.customerSeq = 1;
@@ -55,6 +59,10 @@ class MemoryStore {
     this.staffSeq = 1;
     this.attendanceSeq = 1;
     this.campaignSeq = 1;
+    this.supplierSeq = 1;
+    this.poSeq = 1;
+    this.poItemSeq = 1;
+    this.supplierLedgerSeq = 1;
 
     this.seedDemoData();
   }
@@ -527,6 +535,163 @@ class MemoryStore {
       }
     ];
     this.whatsapp_campaigns.push(...campaigns);
+
+    // Seed Suppliers
+    const suppliers = [
+      {
+        id: this.supplierSeq++,
+        merchant_id: merchant.id,
+        name: "Andean Specialty Beans Co.",
+        contact_person: "Mateo Vargas",
+        phone: "+1-555-7711",
+        email: "orders@andeanbeans.com",
+        address: "450 Export Way, Miami, FL",
+        gst_or_tax_id: "US-TAX-89211",
+        payment_terms: "Net 30",
+        is_active: true,
+        created_at: new Date()
+      },
+      {
+        id: this.supplierSeq++,
+        merchant_id: merchant.id,
+        name: "Barista Gear & Dairy Supplies",
+        contact_person: "Rachel Green",
+        phone: "+1-555-7722",
+        email: "supplies@baristagear.com",
+        address: "120 Logistics Blvd, Chicago, IL",
+        gst_or_tax_id: "US-TAX-44102",
+        payment_terms: "Net 15",
+        is_active: true,
+        created_at: new Date()
+      }
+    ];
+    this.suppliers.push(...suppliers);
+
+    // Seed Purchase Orders & Items
+    const po1 = {
+      id: this.poSeq++,
+      merchant_id: merchant.id,
+      supplier_id: suppliers[0].id,
+      po_number: "PO-202611-001",
+      status: "RECEIVED",
+      total_amount: 450.00,
+      order_date: new Date(Date.now() - 3600 * 1000 * 24 * 6).toISOString().split('T')[0],
+      expected_delivery_date: new Date(Date.now() - 3600 * 1000 * 24 * 3).toISOString().split('T')[0],
+      received_date: new Date(Date.now() - 3600 * 1000 * 24 * 2).toISOString().split('T')[0],
+      notes: "Monthly specialty roast stock",
+      created_at: new Date(Date.now() - 3600 * 1000 * 24 * 6)
+    };
+    this.purchase_orders.push(po1);
+
+    const po1Items = [
+      {
+        id: this.poItemSeq++,
+        purchase_order_id: po1.id,
+        product_id: 1,
+        item_name: "Ethiopian Yirgacheffe Single Origin 1kg",
+        quantity: 25,
+        unit_cost: 12.00,
+        subtotal: 300.00,
+        created_at: new Date()
+      },
+      {
+        id: this.poItemSeq++,
+        purchase_order_id: po1.id,
+        product_id: 2,
+        item_name: "Colombia Supremo Dark Roast 500g",
+        quantity: 15,
+        unit_cost: 10.00,
+        subtotal: 150.00,
+        created_at: new Date()
+      }
+    ];
+    this.purchase_order_items.push(...po1Items);
+
+    const po2 = {
+      id: this.poSeq++,
+      merchant_id: merchant.id,
+      supplier_id: suppliers[1].id,
+      po_number: "PO-202611-002",
+      status: "SENT",
+      total_amount: 280.00,
+      order_date: new Date(Date.now() - 3600 * 1000 * 24 * 1).toISOString().split('T')[0],
+      expected_delivery_date: new Date(Date.now() + 3600 * 1000 * 24 * 3).toISOString().split('T')[0],
+      received_date: null,
+      notes: "Restock milk frothers and double wall tumblers",
+      created_at: new Date(Date.now() - 3600 * 1000 * 24 * 1)
+    };
+    this.purchase_orders.push(po2);
+
+    const po2Items = [
+      {
+        id: this.poItemSeq++,
+        purchase_order_id: po2.id,
+        product_id: 5,
+        item_name: "Double-Walled Glass Tumbler 16oz",
+        quantity: 20,
+        unit_cost: 7.00,
+        subtotal: 140.00,
+        created_at: new Date()
+      },
+      {
+        id: this.poItemSeq++,
+        purchase_order_id: po2.id,
+        product_id: 6,
+        item_name: "Stainless Steel Milk Frothing Pitcher",
+        quantity: 14,
+        unit_cost: 10.00,
+        subtotal: 140.00,
+        created_at: new Date()
+      }
+    ];
+    this.purchase_order_items.push(...po2Items);
+
+    // Seed Supplier Ledgers
+    const supplierLedgers = [
+      {
+        id: this.supplierLedgerSeq++,
+        merchant_id: merchant.id,
+        supplier_id: suppliers[0].id,
+        purchase_order_id: po1.id,
+        transaction_type: "BILL",
+        amount: 450.00,
+        notes: "Invoice for Andean Beans shipment",
+        reference_no: "PO-202611-001",
+        payment_date: new Date(Date.now() - 3600 * 1000 * 24 * 6).toISOString().split('T')[0],
+        payment_method: "BANK_TRANSFER",
+        status: "PENDING",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 6)
+      },
+      {
+        id: this.supplierLedgerSeq++,
+        merchant_id: merchant.id,
+        supplier_id: suppliers[0].id,
+        purchase_order_id: null,
+        transaction_type: "PAYMENT",
+        amount: 250.00,
+        notes: "Partial wire payment against PO-202611-001",
+        reference_no: "TXN-BNK-9811",
+        payment_date: new Date(Date.now() - 3600 * 1000 * 24 * 1).toISOString().split('T')[0],
+        payment_method: "BANK_TRANSFER",
+        status: "SETTLED",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 1)
+      },
+      {
+        id: this.supplierLedgerSeq++,
+        merchant_id: merchant.id,
+        supplier_id: suppliers[1].id,
+        purchase_order_id: po2.id,
+        transaction_type: "BILL",
+        amount: 280.00,
+        notes: "Invoice for Barista Gear order",
+        reference_no: "PO-202611-002",
+        payment_date: new Date(Date.now() - 3600 * 1000 * 24 * 1).toISOString().split('T')[0],
+        payment_method: "BANK_TRANSFER",
+        status: "PENDING",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 1)
+      }
+    ];
+    this.supplier_ledgers.push(...supplierLedgers);
   }
 }
 
@@ -1047,8 +1212,22 @@ function executeMemoryQuery(text, params) {
     return { rows: [newProduct], rowCount: 1 };
   }
 
-  // 29. UPDATE products SET
-  if (normalized.startsWith('UPDATE products SET')) {
+  // 29a. Increment Stock Quantity: UPDATE products SET stock_quantity = stock_quantity + $1 WHERE id = $2 AND merchant_id = $3
+  if (normalized.includes('UPDATE products SET stock_quantity = stock_quantity +')) {
+    const [qty, id, merchant_id] = params;
+    const prod = memoryStore.products.find(
+      p => p.id === parseInt(id, 10) && p.merchant_id === parseInt(merchant_id, 10)
+    );
+    if (prod) {
+      prod.stock_quantity = (prod.stock_quantity || 0) + parseInt(qty, 10);
+      prod.updated_at = new Date();
+      return { rows: [prod], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
+  // 29b. General UPDATE products SET
+  if (normalized.startsWith('UPDATE products SET') && !normalized.includes('stock_quantity = stock_quantity +')) {
     const [product_name, sku, category, purchase_price, selling_price, stock_quantity, low_stock_threshold, unit, id, merchant_id] = params;
     const product = memoryStore.products.find(
       p => p.id === parseInt(id, 10) && p.merchant_id === parseInt(merchant_id, 10)
@@ -1314,6 +1493,252 @@ function executeMemoryQuery(text, params) {
     };
     memoryStore.whatsapp_campaigns.push(newCampaign);
     return { rows: [newCampaign], rowCount: 1 };
+  }
+
+  // 46. Single Supplier by ID: SELECT * FROM suppliers WHERE id = $1 AND merchant_id = $2
+  if (normalized.includes('FROM suppliers') && normalized.includes('WHERE id = $1 AND merchant_id = $2')) {
+    const [id, merchant_id] = params;
+    const rows = memoryStore.suppliers.filter(
+      s => s.id === parseInt(id, 10) && s.merchant_id === parseInt(merchant_id, 10)
+    );
+    return { rows, rowCount: rows.length };
+  }
+
+  // 47. Suppliers list with net_balance & po_count: SELECT s.* ... FROM suppliers s WHERE s.merchant_id = $1
+  if (normalized.includes('FROM suppliers') && !normalized.includes('WHERE id = $1')) {
+    const merchant_id = parseInt(params[0], 10);
+    const rows = memoryStore.suppliers
+      .filter(s => s.merchant_id === merchant_id)
+      .map(s => {
+        const ledgers = memoryStore.supplier_ledgers.filter(
+          sl => sl.supplier_id === s.id && sl.merchant_id === s.merchant_id
+        );
+        const billed = ledgers
+          .filter(l => l.transaction_type === 'BILL')
+          .reduce((sum, l) => sum + (parseFloat(l.amount) || 0), 0);
+        const paid = ledgers
+          .filter(l => l.transaction_type === 'PAYMENT')
+          .reduce((sum, l) => sum + (parseFloat(l.amount) || 0), 0);
+        const po_count = memoryStore.purchase_orders.filter(
+          po => po.supplier_id === s.id && po.merchant_id === s.merchant_id
+        ).length;
+
+        return {
+          ...s,
+          net_balance: (billed - paid).toFixed(2),
+          total_billed: billed.toFixed(2),
+          total_paid: paid.toFixed(2),
+          po_count: po_count
+        };
+      })
+      .sort((a, b) => a.id - b.id);
+    return { rows, rowCount: rows.length };
+  }
+
+  // 48. INSERT INTO suppliers
+  if (normalized.startsWith('INSERT INTO suppliers')) {
+    const [merchant_id, name, contact_person, phone, email, address, gst_or_tax_id, payment_terms, is_active] = params;
+    const newSupplier = {
+      id: memoryStore.supplierSeq++,
+      merchant_id: parseInt(merchant_id, 10),
+      name: name ? name.trim() : 'Supplier',
+      contact_person: contact_person ? contact_person.trim() : '',
+      phone: phone ? phone.trim() : '',
+      email: email ? email.trim() : '',
+      address: address ? address.trim() : '',
+      gst_or_tax_id: gst_or_tax_id ? gst_or_tax_id.trim() : '',
+      payment_terms: payment_terms ? payment_terms.trim() : 'Net 30',
+      is_active: is_active !== undefined ? Boolean(is_active) : true,
+      created_at: new Date()
+    };
+    memoryStore.suppliers.push(newSupplier);
+    return { rows: [newSupplier], rowCount: 1 };
+  }
+
+  // 49. UPDATE suppliers SET
+  if (normalized.startsWith('UPDATE suppliers SET')) {
+    const [name, contact_person, phone, email, address, gst_or_tax_id, payment_terms, is_active, id, merchant_id] = params;
+    const sup = memoryStore.suppliers.find(
+      s => s.id === parseInt(id, 10) && s.merchant_id === parseInt(merchant_id, 10)
+    );
+    if (sup) {
+      if (name !== undefined) sup.name = name.trim();
+      if (contact_person !== undefined) sup.contact_person = contact_person.trim();
+      if (phone !== undefined) sup.phone = phone.trim();
+      if (email !== undefined) sup.email = email.trim();
+      if (address !== undefined) sup.address = address.trim();
+      if (gst_or_tax_id !== undefined) sup.gst_or_tax_id = gst_or_tax_id.trim();
+      if (payment_terms !== undefined) sup.payment_terms = payment_terms.trim();
+      if (is_active !== undefined) sup.is_active = Boolean(is_active);
+      return { rows: [sup], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
+  // 50. DELETE FROM suppliers WHERE id = $1 AND merchant_id = $2
+  if (normalized.startsWith('DELETE FROM suppliers WHERE id = $1 AND merchant_id = $2')) {
+    const [id, merchant_id] = params;
+    const sId = parseInt(id, 10);
+    const mId = parseInt(merchant_id, 10);
+    const initLen = memoryStore.suppliers.length;
+    memoryStore.suppliers = memoryStore.suppliers.filter(s => !(s.id === sId && s.merchant_id === mId));
+    // cascade
+    memoryStore.supplier_ledgers = memoryStore.supplier_ledgers.filter(sl => sl.supplier_id !== sId);
+    memoryStore.purchase_orders = memoryStore.purchase_orders.filter(po => po.supplier_id !== sId);
+    return { rows: [], rowCount: initLen - memoryStore.suppliers.length };
+  }
+
+  // 51. Single Purchase Order by ID: SELECT po.* ... WHERE po.id = $1 AND po.merchant_id = $2 (or id = $1 AND merchant_id = $2)
+  if (normalized.includes('FROM purchase_orders') && (normalized.includes('WHERE po.id = $1') || normalized.includes('WHERE id = $1'))) {
+    const [id, merchant_id] = params;
+    const po = memoryStore.purchase_orders.find(
+      p => p.id === parseInt(id, 10) && p.merchant_id === parseInt(merchant_id, 10)
+    );
+    if (po) {
+      const supplier = memoryStore.suppliers.find(s => s.id === po.supplier_id) || {};
+      const enriched = {
+        ...po,
+        supplier_name: supplier.name || 'Unknown',
+        supplier_phone: supplier.phone || '',
+        supplier_contact: supplier.contact_person || '',
+        supplier_email: supplier.email || '',
+        supplier_address: supplier.address || ''
+      };
+      return { rows: [enriched], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
+  // 52. Purchase Orders list: SELECT po.* ... FROM purchase_orders po ... WHERE po.merchant_id = $1
+  if (normalized.includes('FROM purchase_orders') && !normalized.includes('WHERE po.id = $1') && !normalized.includes('WHERE id = $1')) {
+    const merchant_id = parseInt(params[0], 10);
+    const rows = memoryStore.purchase_orders
+      .filter(p => p.merchant_id === merchant_id)
+      .map(po => {
+        const supplier = memoryStore.suppliers.find(s => s.id === po.supplier_id) || {};
+        const itemCount = memoryStore.purchase_order_items.filter(poi => poi.purchase_order_id === po.id).length;
+        return {
+          ...po,
+          supplier_name: supplier.name || 'Unknown',
+          supplier_phone: supplier.phone || '',
+          supplier_contact: supplier.contact_person || '',
+          item_count: itemCount
+        };
+      })
+      .sort((a, b) => b.id - a.id);
+    return { rows, rowCount: rows.length };
+  }
+
+  // 53. Purchase Order Items: SELECT poi.* ... FROM purchase_order_items poi ... WHERE poi.purchase_order_id = $1
+  if (normalized.includes('FROM purchase_order_items')) {
+    const po_id = parseInt(params[0], 10);
+    const rows = memoryStore.purchase_order_items
+      .filter(poi => poi.purchase_order_id === po_id)
+      .map(poi => {
+        const prod = poi.product_id ? memoryStore.products.find(p => p.id === poi.product_id) : null;
+        return {
+          ...poi,
+          product_name: prod ? prod.product_name : poi.item_name,
+          sku: prod ? prod.sku : null
+        };
+      })
+      .sort((a, b) => a.id - b.id);
+    return { rows, rowCount: rows.length };
+  }
+
+  // 54. INSERT INTO purchase_orders
+  if (normalized.startsWith('INSERT INTO purchase_orders')) {
+    const [merchant_id, supplier_id, po_number, status, total_amount, order_date, expected_delivery_date, notes] = params;
+    const newPO = {
+      id: memoryStore.poSeq++,
+      merchant_id: parseInt(merchant_id, 10),
+      supplier_id: parseInt(supplier_id, 10),
+      po_number: po_number ? po_number.trim() : `PO-${Date.now().toString().slice(-6)}`,
+      status: status || 'SENT',
+      total_amount: parseFloat(total_amount) || 0,
+      order_date: order_date || new Date().toISOString().split('T')[0],
+      expected_delivery_date: expected_delivery_date || null,
+      received_date: null,
+      notes: notes || '',
+      created_at: new Date()
+    };
+    memoryStore.purchase_orders.push(newPO);
+    return { rows: [newPO], rowCount: 1 };
+  }
+
+  // 55. INSERT INTO purchase_order_items
+  if (normalized.startsWith('INSERT INTO purchase_order_items')) {
+    const [purchase_order_id, product_id, item_name, quantity, unit_cost, subtotal] = params;
+    const newItem = {
+      id: memoryStore.poItemSeq++,
+      purchase_order_id: parseInt(purchase_order_id, 10),
+      product_id: product_id ? parseInt(product_id, 10) : null,
+      item_name: item_name ? item_name.trim() : 'Item',
+      quantity: parseInt(quantity, 10) || 1,
+      unit_cost: parseFloat(unit_cost) || 0,
+      subtotal: parseFloat(subtotal) || 0,
+      created_at: new Date()
+    };
+    memoryStore.purchase_order_items.push(newItem);
+    return { rows: [newItem], rowCount: 1 };
+  }
+
+  // 56. UPDATE purchase_orders SET status
+  if (normalized.startsWith('UPDATE purchase_orders SET status')) {
+    const [status, received_date, id, merchant_id] = params;
+    const po = memoryStore.purchase_orders.find(
+      p => p.id === parseInt(id, 10) && p.merchant_id === parseInt(merchant_id, 10)
+    );
+    if (po) {
+      po.status = status;
+      if (received_date !== undefined) po.received_date = received_date;
+      return { rows: [po], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
+  // 57. Increment Product Stock Quantity: UPDATE products SET stock_quantity = stock_quantity + $1
+  if (normalized.includes('UPDATE products SET stock_quantity = stock_quantity + $1')) {
+    const [qty, id, merchant_id] = params;
+    const prod = memoryStore.products.find(
+      p => p.id === parseInt(id, 10) && p.merchant_id === parseInt(merchant_id, 10)
+    );
+    if (prod) {
+      prod.stock_quantity = (prod.stock_quantity || 0) + parseInt(qty, 10);
+      prod.updated_at = new Date();
+      return { rows: [prod], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
+  // 58. Supplier Ledgers by Supplier: SELECT * FROM supplier_ledgers WHERE supplier_id = $1 AND merchant_id = $2
+  if (normalized.includes('FROM supplier_ledgers WHERE supplier_id = $1 AND merchant_id = $2')) {
+    const [supplier_id, merchant_id] = params;
+    const rows = memoryStore.supplier_ledgers
+      .filter(sl => sl.supplier_id === parseInt(supplier_id, 10) && sl.merchant_id === parseInt(merchant_id, 10))
+      .sort((a, b) => b.id - a.id);
+    return { rows, rowCount: rows.length };
+  }
+
+  // 59. INSERT INTO supplier_ledgers
+  if (normalized.startsWith('INSERT INTO supplier_ledgers')) {
+    const [merchant_id, supplier_id, purchase_order_id, transaction_type, amount, notes, reference_no, payment_date, payment_method, status] = params;
+    const newLedger = {
+      id: memoryStore.supplierLedgerSeq++,
+      merchant_id: parseInt(merchant_id, 10),
+      supplier_id: parseInt(supplier_id, 10),
+      purchase_order_id: purchase_order_id ? parseInt(purchase_order_id, 10) : null,
+      transaction_type: transaction_type || 'BILL',
+      amount: parseFloat(amount) || 0,
+      notes: notes || '',
+      reference_no: reference_no || '',
+      payment_date: payment_date || new Date().toISOString().split('T')[0],
+      payment_method: payment_method || 'BANK_TRANSFER',
+      status: status || 'PENDING',
+      created_at: new Date()
+    };
+    memoryStore.supplier_ledgers.push(newLedger);
+    return { rows: [newLedger], rowCount: 1 };
   }
 
   console.warn('[Unmatched Fallback Query]:', text);

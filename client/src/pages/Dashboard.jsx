@@ -221,6 +221,17 @@ export default function Dashboard({ setActiveTab }) {
               </button>
 
               <button
+                onClick={() => setActiveTab('suppliers')}
+                className="w-full text-left p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 hover:border-slate-600 transition flex items-center justify-between"
+              >
+                <div>
+                  <div className="text-xs font-bold text-white">Suppliers & Purchase Orders</div>
+                  <div className="text-[11px] text-slate-400">Manage vendor POs, stock inwarding & accounts payable</div>
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-sky-400" />
+              </button>
+
+              <button
                 onClick={() => setActiveTab('udhaar')}
                 className="w-full text-left p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 hover:border-slate-600 transition flex items-center justify-between"
               >

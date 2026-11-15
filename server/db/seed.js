@@ -178,6 +178,55 @@ async function seedData() {
         ($1, 'VIP Connoisseur Tasting Invitation', 'ACTIVE_MEMBERS', 'Dear {customer_name}, as a valued loyalty member of {store_name}, your complimentary private tasting pass is ready this Friday evening!', 'Free Tasting Pass', 'SENT', 3)
     `, [merchantId]);
 
+    // 12. Seed Suppliers
+    const sup1 = await client.query(`
+      INSERT INTO suppliers (merchant_id, name, contact_person, phone, email, address, gst_or_tax_id, payment_terms, is_active)
+      VALUES ($1, 'Andean Specialty Beans Co.', 'Mateo Vargas', '+1-555-7711', 'orders@andeanbeans.com', '450 Export Way, Miami, FL', 'US-TAX-89211', 'Net 30', true)
+      RETURNING id;
+    `, [merchantId]);
+
+    const sup2 = await client.query(`
+      INSERT INTO suppliers (merchant_id, name, contact_person, phone, email, address, gst_or_tax_id, payment_terms, is_active)
+      VALUES ($1, 'Barista Gear & Dairy Supplies', 'Rachel Green', '+1-555-7722', 'supplies@baristagear.com', '120 Logistics Blvd, Chicago, IL', 'US-TAX-44102', 'Net 15', true)
+      RETURNING id;
+    `, [merchantId]);
+
+    // 13. Seed Purchase Orders & Line Items
+    const po1 = await client.query(`
+      INSERT INTO purchase_orders (merchant_id, supplier_id, po_number, status, total_amount, order_date, received_date, notes)
+      VALUES ($1, $2, 'PO-202611-001', 'RECEIVED', 450.00, CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE - INTERVAL '2 days', 'Monthly specialty roast stock')
+      RETURNING id;
+    `, [merchantId, sup1.rows[0].id]);
+
+    await client.query(`
+      INSERT INTO purchase_order_items (purchase_order_id, product_id, item_name, quantity, unit_cost, subtotal)
+      VALUES 
+        ($1, 1, 'Ethiopian Yirgacheffe Single Origin 1kg', 25, 12.00, 300.00),
+        ($1, 2, 'Colombia Supremo Dark Roast 500g', 15, 10.00, 150.00)
+    `, [po1.rows[0].id]);
+
+    const po2 = await client.query(`
+      INSERT INTO purchase_orders (merchant_id, supplier_id, po_number, status, total_amount, order_date, expected_delivery_date, notes)
+      VALUES ($1, $2, 'PO-202611-002', 'SENT', 280.00, CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '3 days', 'Restock milk frothers and double wall tumblers')
+      RETURNING id;
+    `, [merchantId, sup2.rows[0].id]);
+
+    await client.query(`
+      INSERT INTO purchase_order_items (purchase_order_id, product_id, item_name, quantity, unit_cost, subtotal)
+      VALUES 
+        ($1, 5, 'Double-Walled Glass Tumbler 16oz', 20, 7.00, 140.00),
+        ($1, 6, 'Stainless Steel Milk Frothing Pitcher', 14, 10.00, 140.00)
+    `, [po2.rows[0].id]);
+
+    // 14. Seed Supplier Ledgers
+    await client.query(`
+      INSERT INTO supplier_ledgers (merchant_id, supplier_id, purchase_order_id, transaction_type, amount, notes, reference_no, payment_date, status)
+      VALUES 
+        ($1, $2, $3, 'BILL', 450.00, 'Invoice for Andean Beans shipment', 'PO-202611-001', CURRENT_DATE - INTERVAL '6 days', 'PENDING'),
+        ($1, $2, NULL, 'PAYMENT', 250.00, 'Partial wire payment against PO-202611-001', 'TXN-BNK-9811', CURRENT_DATE - INTERVAL '1 day', 'SETTLED'),
+        ($1, $4, $5, 'BILL', 280.00, 'Invoice for Barista Gear order', 'PO-202611-002', CURRENT_DATE - INTERVAL '1 day', 'PENDING')
+    `, [merchantId, sup1.rows[0].id, po1.rows[0].id, sup2.rows[0].id, po2.rows[0].id]);
+
     console.log('[Seed] Demo data seeded successfully into PostgreSQL!');
   } catch (err) {
     console.error('[Seed Error]:', err.message);

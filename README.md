@@ -57,6 +57,14 @@ A production-ready Multi-Tenant Loyalty and Membership SaaS CRM platform designe
    - **Pre-Configured Promotional Presets**: 1-click templates for Weekend Flash Discounts, Holiday Specials, VIP Double Points, and Loyalty Invitations.
    - **Interactive WhatsApp Web Launcher**: Generate direct `https://wa.me/...` links for cashier/owner to dispatch offers directly without third-party API costs.
 
+10. **Purchase Orders & Supplier Management**:
+   - **Wholesaler & Vendor Directory**: Manage supplier contact profiles, payment terms (`Net 30`, `Net 15`, `COD`), tax ID, and address.
+   - **Purchase Orders (POs)**: Create purchase orders with multiple product line items, quantities, and negotiated unit costs.
+   - **1-Click Low-Stock Auto-Population**: Automatically scans inventory for low-stock items (`stock_quantity <= low_stock_threshold`) and populates recommended reorder quantities into the PO.
+   - **WhatsApp PO Dispatch**: Generate direct pre-filled `https://wa.me/...` links to dispatch structured Purchase Orders to suppliers via WhatsApp Web.
+   - **Automated Inventory Inwarding**: Marking a PO as `RECEIVED` automatically updates received dates and increments product `stock_quantity` in the store catalog.
+   - **Supplier Khata Ledger**: Real-time accounts payable tracking (`BILLS - PAYMENTS`), statement view, and settlement recording.
+
 ---
 
 ## 📂 Project Structure
@@ -89,7 +97,9 @@ merchant-loyalty-saas/
 │   │   ├── udhaarController.js      # Digital Khata / Udhaar transactions & statements
 │   │   ├── expensesController.js    # Expense recording & real-time P&L Net Profit/Loss
 │   │   ├── staffController.js       # Staff directory, daily attendance & payroll
-│   │   └── whatsappController.js    # Bulk promotional campaigns & audience links
+│   │   ├── whatsappController.js    # Bulk promotional campaigns & audience links
+│   │   ├── suppliersController.js   # Suppliers directory & Accounts Payable Khata
+│   │   └── purchaseOrdersController.js # PO creation, WhatsApp links & stock inwarding
 │   ├── routes/
 │   │   ├── index.js           # Central API router (/api)
 │   │   ├── authRoutes.js
@@ -102,7 +112,9 @@ merchant-loyalty-saas/
 │   │   ├── udhaarRoutes.js
 │   │   ├── expensesRoutes.js
 │   │   ├── staffRoutes.js
-│   │   └── whatsappRoutes.js
+│   │   ├── whatsappRoutes.js
+│   │   ├── suppliersRoutes.js
+│   │   └── purchaseOrdersRoutes.js
 │   └── test-unit.js           # Automated controller verification test suite
 │
 └── client/                    # React & Tailwind CSS Frontend
@@ -128,6 +140,7 @@ merchant-loyalty-saas/
             ├── POSCheckout.jsx      # High-speed cashier checkout terminal
             ├── DigitalKhata.jsx     # Credit ledger, passbook statements & WhatsApp reminders
             ├── Inventory.jsx        # Stock tracking, low-stock alerts & SKU manager
+            ├── SuppliersAndPOs.jsx  # Vendor directory, PO creation, WhatsApp dispatch & inwarding
             ├── Expenses.jsx         # Expenses ledger, category breakdown & P&L Statement
             ├── StaffPayroll.jsx     # Staff directory, 1-click attendance & payroll
             ├── WhatsAppMarketing.jsx# Broadcast campaign composer & WhatsApp links

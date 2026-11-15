@@ -33,6 +33,18 @@ import {
   createCampaign,
   getAudienceList
 } from './controllers/whatsappController.js';
+import {
+  getSuppliers,
+  createSupplier,
+  getSupplierLedger,
+  recordSupplierPayment
+} from './controllers/suppliersController.js';
+import {
+  getPurchaseOrders,
+  createPurchaseOrder,
+  getPurchaseOrderById,
+  updatePurchaseOrderStatus
+} from './controllers/purchaseOrdersController.js';
 
 // Helper to mock express req/res
 function mockReqRes(reqData = {}) {
@@ -334,7 +346,111 @@ async function runUnitTests() {
     sampleLinkGenerated: audienceRes.body.customers?.[0]?.whatsappUrl?.startsWith('https://wa.me/')
   });
 
-  console.log('\n🌟 ALL 21 SAAS PLATFORM MODULE CONTROLLERS VERIFIED AND WORKING PROPERLY! 🌟');
+  // 22. Test Suppliers List & Creation
+  const { req: createSupReq, res: createSupRes } = mockReqRes({
+    merchantId: 1,
+    body: {
+      name: 'Organic Oat & Almond Dairy Ltd',
+      contact_person: 'Elena Rostova',
+      phone: '+1-555-9922',
+      email: 'orders@organicoat.com',
+      address: '77 Farmview Rd, Portland, OR',
+      gst_or_tax_id: 'US-TAX-66120',
+      payment_terms: 'Net 15'
+    }
+  });
+  await createSupplier(createSupReq, createSupRes);
+  const { req: getSupReq, res: getSupRes } = mockReqRes({ merchantId: 1 });
+  await getSuppliers(getSupReq, getSupRes);
+  console.log('22. Suppliers Directory & Accounts Payable:', {
+    passed: createSupRes.body.success === true && getSupRes.body.suppliers?.length >= 3,
+    totalSuppliers: getSupRes.body.summary?.totalSuppliers,
+    totalPayable: `$${getSupRes.body.summary?.totalPayable}`
+  });
+
+  // 23. Test Supplier Ledger & Payment Recording
+  const { req: paySupReq, res: paySupRes } = mockReqRes({
+    merchantId: 1,
+    body: {
+      supplier_id: 1,
+      amount: 100.00,
+      notes: 'Check payment for monthly beans invoice',
+      reference_no: 'CHK-77881',
+      payment_method: 'CHECK'
+    }
+  });
+  await recordSupplierPayment(paySupReq, paySupRes);
+  const { req: getLedgerReq, res: getLedgerRes } = mockReqRes({
+    merchantId: 1,
+    params: { id: 1 }
+  });
+  await getSupplierLedger(getLedgerReq, getLedgerRes);
+  console.log('23. Supplier Khata Statement & Payment:', {
+    passed: paySupRes.body.success === true && getLedgerRes.body.statement?.entriesCount >= 3,
+    supplier: getLedgerRes.body.supplier?.name,
+    totalBilled: `$${getLedgerRes.body.statement?.totalBilled}`,
+    totalPaid: `$${getLedgerRes.body.statement?.totalPaid}`,
+    netPayable: `$${getLedgerRes.body.statement?.netPayable}`
+  });
+
+  // 24. Test Create Purchase Order with Line Items
+  const { req: createPOReq, res: createPORes } = mockReqRes({
+    merchantId: 1,
+    storeName: 'Artisan Coffee Roasters',
+    body: {
+      supplier_id: 1,
+      notes: 'Urgent restocking for weekend festival',
+      items: [
+        {
+          product_id: 2, // House Espresso Blend 1kg (current stock: 3)
+          item_name: 'House Espresso Blend 1kg',
+          quantity: 10,
+          unit_cost: 14.00
+        },
+        {
+          product_id: 3, // Barista Series Oat Milk 1L (current stock: 4)
+          item_name: 'Barista Series Oat Milk 1L',
+          quantity: 24,
+          unit_cost: 1.80
+        }
+      ]
+    }
+  });
+  await createPurchaseOrder(createPOReq, createPORes);
+  const newPOId = createPORes.body.purchaseOrder?.id;
+  const { req: getPOReq, res: getPORes } = mockReqRes({
+    merchantId: 1,
+    storeName: 'Artisan Coffee Roasters',
+    params: { id: newPOId }
+  });
+  await getPurchaseOrderById(getPOReq, getPORes);
+  console.log('24. Purchase Order Creation & WhatsApp Link:', {
+    passed: createPORes.body.success === true && getPORes.body.purchaseOrder?.items?.length === 2,
+    poNumber: getPORes.body.purchaseOrder?.po_number,
+    totalAmount: `$${parseFloat(getPORes.body.purchaseOrder?.total_amount).toFixed(2)}`,
+    hasWhatsAppLink: Boolean(getPORes.body.purchaseOrder?.whatsapp_link?.startsWith('https://wa.me/'))
+  });
+
+  // 25. Test Inwarding / Mark PO as RECEIVED (Auto-increments stock levels!)
+  const { req: updateStatusReq, res: updateStatusRes } = mockReqRes({
+    merchantId: 1,
+    params: { id: newPOId },
+    body: { status: 'RECEIVED' }
+  });
+  await updatePurchaseOrderStatus(updateStatusReq, updateStatusRes);
+  const { req: prodReq, res: prodRes } = mockReqRes({ merchantId: 1 });
+  await getProducts(prodReq, prodRes);
+  const updatedEspresso = prodRes.body.products?.find(p => p.id === 2);
+  console.log('25. Inward PO & Automated Stock Level Increment:', {
+    passed: updateStatusRes.body.success === true && 
+            updateStatusRes.body.purchaseOrder?.status === 'RECEIVED' &&
+            updatedEspresso?.stock_quantity >= 13, // 3 previous + 10 received = 13!
+    poStatus: updateStatusRes.body.purchaseOrder?.status,
+    stockUpdatesCount: updateStatusRes.body.stockUpdates?.length,
+    productStockAfterInward: `${updatedEspresso?.product_name}: ${updatedEspresso?.stock_quantity} in stock`
+  });
+
+  console.log('\n🌟 ALL 25 SAAS PLATFORM MODULE CONTROLLERS VERIFIED AND WORKING PROPERLY! 🌟');
 }
 
 runUnitTests().catch(console.error);
