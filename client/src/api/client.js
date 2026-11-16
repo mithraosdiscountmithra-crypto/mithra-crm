@@ -292,6 +292,14 @@ export const api = {
   // 7. Executive Dashboard Pillar (CEO KPI Suite & Multi-Branch)
   executive: {
     getOverview: () => request('/executive/overview'),
+  },
+
+  // 8. Super Admin / Platform Master SaaS Controller
+  admin: {
+    getOverview: () => request('/admin/overview'),
+    createVendor: (data) => request('/admin/vendors', { method: 'POST', body: data }),
+    toggleVendorStatus: (id, is_active) => request(`/admin/vendors/${id}/status`, { method: 'PATCH', body: { is_active } }),
+    impersonateVendor: (id) => request(`/admin/vendors/${id}/impersonate`, { method: 'POST' }),
   }
 };
 

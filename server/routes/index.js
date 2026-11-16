@@ -22,6 +22,7 @@ import rdRoutes from './rdRoutes.js';
 import financePillarRoutes from './financePillarRoutes.js';
 import hrPillarRoutes from './hrPillarRoutes.js';
 import executiveRoutes from './executiveRoutes.js';
+import adminRoutes from './adminRoutes.js';
 
 const router = Router();
 
@@ -50,6 +51,7 @@ router.use('/rd', rdRoutes);
 router.use('/finance', financePillarRoutes);
 router.use('/hr', hrPillarRoutes);
 router.use('/executive', executiveRoutes);
+router.use('/admin', adminRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {

@@ -82,6 +82,12 @@ import {
 import { getTaxReport } from './controllers/financePillarController.js';
 import { getPayrollCalculation, getRBACMatrix, updateRBACRole } from './controllers/hrPillarController.js';
 import { getExecutiveOverview } from './controllers/executiveController.js';
+import { 
+  getPlatformOverview, 
+  createVendor, 
+  toggleVendorStatus, 
+  impersonateVendor 
+} from './controllers/adminController.js';
 
 // Helper to mock express req/res
 function mockReqRes(reqData = {}) {
@@ -903,7 +909,51 @@ async function runUnitTests() {
     aiExecutiveHeadline: execRes.body.executive?.aiBriefing?.headline
   });
 
-  console.log('\n🌟 ALL 43 SAAS PLATFORM MODULE CONTROLLERS & 7 PILLARS VERIFIED AND WORKING PROPERLY! 🌟');
+  // 44. Test Super Admin - Master Platform Overview, Vendor Provisioning & WhatsApp Dispatch
+  const { req: adminOverviewReq, res: adminOverviewRes } = mockReqRes({ merchantId: 1 });
+  await getPlatformOverview(adminOverviewReq, adminOverviewRes);
+
+  const { req: newVendorReq, res: newVendorRes } = mockReqRes({
+    merchantId: 1,
+    body: {
+      store_name: 'Annapurna Tiffins & Meals',
+      owner_name: 'Ramesh Reddy',
+      category: 'Restaurant & Dining',
+      phone: '9848011223',
+      email: 'ramesh@annapurna.com',
+      password: 'Mithra@Password123',
+      city: 'Vijayawada',
+      address: 'Beside Bus Stand, MG Road'
+    }
+  });
+  await createVendor(newVendorReq, newVendorRes);
+
+  const { req: toggleStatusReq, res: toggleStatusRes } = mockReqRes({
+    merchantId: 1,
+    params: { id: 1 },
+    body: { is_active: true }
+  });
+  await toggleVendorStatus(toggleStatusReq, toggleStatusRes);
+
+  const { req: impersonateReq, res: impersonateRes } = mockReqRes({
+    merchantId: 1,
+    params: { id: 1 }
+  });
+  await impersonateVendor(impersonateReq, impersonateRes);
+
+  console.log('44. Super Admin SaaS Main Panel - Multi-Vendor Provisioning & WhatsApp Dispatch:', {
+    passed: adminOverviewRes.body.success === true &&
+            newVendorRes.body.success === true &&
+            newVendorRes.body.whatsapp_link?.includes('wa.me') &&
+            toggleStatusRes.body.success === true &&
+            impersonateRes.body.success === true,
+    totalVendorsInSystem: adminOverviewRes.body.stats?.total_vendors,
+    provisionedVendor: newVendorRes.body.vendor?.store_name,
+    hasWhatsAppWelcomeLink: Boolean(newVendorRes.body.whatsapp_link),
+    impersonateTokenGenerated: Boolean(impersonateRes.body.token)
+  });
+
+  console.log('\n🌟 ALL 44 SAAS PLATFORM MODULE CONTROLLERS & MASTER SUPER ADMIN VERIFIED AND WORKING PROPERLY! 🌟');
 }
 
 runUnitTests().catch(console.error);

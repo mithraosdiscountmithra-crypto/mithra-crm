@@ -1579,6 +1579,25 @@ function executeMemoryQuery(text, params) {
     return { rows, rowCount: rows.length };
   }
 
+  // 1b. SELECT all merchants (Super Admin)
+  if (normalized.includes('FROM merchants') && !normalized.includes('WHERE')) {
+    const rows = [...memoryStore.merchants].sort((a, b) => b.id - a.id);
+    return { rows, rowCount: rows.length };
+  }
+
+  // 1c. UPDATE merchants SET is_active
+  if (normalized.includes('UPDATE merchants SET is_active = $1 WHERE id = $2')) {
+    const isActive = Boolean(params[0]);
+    const id = parseInt(params[1], 10);
+    const m = memoryStore.merchants.find(x => x.id === id);
+    if (m) {
+      m.is_active = isActive;
+      m.updated_at = new Date();
+      return { rows: [m], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
   // 2. SELECT * FROM merchants WHERE id = $1
   if (normalized.includes('FROM merchants WHERE id = $1')) {
     const id = parseInt(params[0], 10);

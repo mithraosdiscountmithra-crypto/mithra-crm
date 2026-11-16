@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Store, ShoppingCart, ShoppingBag, LogOut, ShieldCheck, Sparkles, Volume2, QrCode } from 'lucide-react';
+import { Store, ShoppingCart, ShoppingBag, LogOut, ShieldCheck, Sparkles, Volume2, QrCode, Crown } from 'lucide-react';
 import { playOrderChime } from '../utils/sound';
 import VendorQRModal from './VendorQRModal';
 
@@ -36,6 +36,20 @@ export default function Navbar({ activeTab, setActiveTab }) {
 
         {/* Quick POS Mode Toggle & User Controls */}
         <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Master Super Admin Panel */}
+          <button
+            onClick={() => setActiveTab('admin')}
+            title="Mithra Master SaaS Panel (Super Admin - Manage All Vendors & Provisioning)"
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-black transition-all shadow-sm active:scale-95 ${
+              activeTab === 'admin'
+                ? 'bg-amber-500 text-slate-950 shadow-amber-500/30 ring-2 ring-amber-300'
+                : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40'
+            }`}
+          >
+            <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+            <span className="hidden sm:inline">👑 Main Panel</span>
+          </button>
+
           {/* Vendor QR Code Modal Button */}
           <button
             onClick={() => setIsQRModalOpen(true)}

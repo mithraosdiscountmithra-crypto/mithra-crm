@@ -28,12 +28,21 @@ import WhatsAppMarketing from './pages/WhatsAppMarketing';
 import SuppliersAndPOs from './pages/SuppliersAndPOs';
 import RedemptionsList from './pages/RedemptionsList';
 import Settings from './pages/Settings';
+import SuperAdminPanel from './pages/SuperAdminPanel';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
 export default function App() {
   const { merchant, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState('executive'); // Default to Pillar 7 (Executive Suite)
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab') === 'admin' || params.get('admin') === 'true') {
+        return 'admin';
+      }
+    }
+    return 'executive';
+  });
   const [currentRole, setCurrentRole] = useState('Owner / CEO'); // RBAC Role Switcher
   const [authView, setAuthView] = useState('login'); // 'login' or 'register'
 
@@ -123,6 +132,9 @@ export default function App() {
           {activeTab === 'plans' && <MembershipPlans />}
           {activeTab === 'redemptions' && <RedemptionsList />}
           {activeTab === 'settings' && <Settings />}
+          {(activeTab === 'admin' || activeTab === 'super_admin') && (
+            <SuperAdminPanel setActiveTab={setActiveTab} />
+          )}
         </main>
       </div>
 
