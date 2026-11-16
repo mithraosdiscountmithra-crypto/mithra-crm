@@ -45,6 +45,17 @@ export default function Sidebar({ activeTab, setActiveTab, currentRole = 'Owner 
   return (
     <aside className="w-64 border-r border-slate-800 bg-slate-950/70 flex flex-col justify-between p-4 shrink-0 hidden md:flex">
       <div className="space-y-5">
+        {/* Brand Header */}
+        <div className="px-1 flex items-center gap-2.5 pb-2 border-b border-slate-800/80">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-amber-500/10">
+            👑
+          </div>
+          <div>
+            <span className="font-black text-sm text-white tracking-tight block">Mithra CRM</span>
+            <span className="text-[10px] font-semibold text-amber-400/90 block">7 Pillars Management</span>
+          </div>
+        </div>
+
         {/* Active Role Selector Widget */}
         <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1.5">
           <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -147,8 +158,8 @@ export default function Sidebar({ activeTab, setActiveTab, currentRole = 'Owner 
       {/* Tenant Isolated Status Card */}
       <div className="p-3.5 rounded-2xl bg-gradient-to-b from-slate-900/80 to-slate-900/40 border border-slate-800 space-y-1.5">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
-          <Database className="w-3.5 h-3.5 text-sky-400" />
-          <span>7 Pillars Enterprise ERP</span>
+          <Database className="w-3.5 h-3.5 text-amber-400" />
+          <span>Mithra CRM • 7 Pillars ERP</span>
         </div>
         <p className="text-[10px] text-slate-500 leading-relaxed">
           PostgreSQL multi-tenant schema with strict role access controls.

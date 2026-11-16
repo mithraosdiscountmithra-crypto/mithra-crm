@@ -315,10 +315,10 @@ export default function CustomerStorefront() {
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
             <Store className="w-4 h-4" />
-            <span>Digital Storefront & Customer Ordering</span>
+            <span>Mithra CRM • Digital Storefront</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            <span>{storeInfo?.store_name || 'DiscountMithra Digital Storefront'}</span>
+            <span>{storeInfo?.store_name || 'Mithra CRM Digital Storefront'}</span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
               Live Catalog
             </span>

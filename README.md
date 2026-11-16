@@ -1,4 +1,4 @@
-# LoyaltyHub | Multi-Tenant Merchant Loyalty & Membership SaaS CRM
+# Mithra CRM | Multi-Tenant Merchant Loyalty & Membership SaaS CRM
 
 A production-ready Multi-Tenant Loyalty and Membership SaaS CRM platform designed for retail, cafes, salons, restaurants, and service merchants. Built using **Node.js**, **Express**, **PostgreSQL (Neon DB)**, and **React** with **Tailwind CSS**.
 
@@ -90,7 +90,7 @@ A production-ready Multi-Tenant Loyalty and Membership SaaS CRM platform designe
 
 ## 🏛️ The 7 Management Pillars / Departments Architecture
 
-The DiscountMithra enterprise platform is organized into the **7 Core Management Pillars**:
+The Mithra CRM enterprise platform is organized into the **7 Core Management Pillars**:
 
 1. 👑 **Management Executive Dashboard (Pillar 7)**:
    - High-level CEO / Owner Strategic KPI Suite (Health score 0-100, Net Margin, LTV, Udhaar Recovery Rate, Stock Valuation).

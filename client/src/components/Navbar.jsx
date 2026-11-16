@@ -15,8 +15,8 @@ export default function Navbar({ activeTab, setActiveTab }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-base tracking-tight text-white">LoyaltyHub</span>
-              <span className="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+              <span className="font-extrabold text-base tracking-tight text-white">Mithra CRM</span>
+              <span className="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
                 SaaS
               </span>
             </div>

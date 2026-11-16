@@ -46,9 +46,9 @@ export default function Register({ onSwitchToLogin }) {
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center shadow-xl shadow-indigo-500/20 text-3xl mx-auto">
             👑
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Create Merchant Tenant Account</h1>
+          <h1 className="text-2xl font-black text-white tracking-tight">Create Mithra CRM Merchant Account</h1>
           <p className="text-xs text-slate-400">
-            Launch your store loyalty CRM & POS with tenant-isolated customer data.
+            Launch your store loyalty CRM & POS with Mithra CRM multi-tenant customer data.
           </p>
         </div>
 

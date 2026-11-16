@@ -70,7 +70,7 @@ export default function ExecutiveDashboard({ setActiveTab }) {
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">
             <Crown className="w-4 h-4 text-amber-400" />
-            <span>Pillar 7: Executive Management Suite</span>
+            <span>Mithra CRM • Pillar 7: Executive Management Suite</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
             <span>CEO Cockpit & Multi-Branch Oversight</span>

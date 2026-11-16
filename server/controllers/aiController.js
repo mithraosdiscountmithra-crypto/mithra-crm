@@ -167,9 +167,9 @@ function generateContextualHeuristicReply(userMessage, context) {
   if (query.includes('sale') || query.includes('revenue') || query.includes('income') || query.includes('performance') || query.includes('earn')) {
     return `### 📊 Real-Time Sales & Revenue Summary for **${store.name}**
 
-* **Gross Sales (POS)**: \`$${sales.grossSales || '0.00'}\`
-* **Loyalty Discounts Given**: \`-$${sales.totalDiscounts || '0.00'}\`
-* **Net Realized Revenue**: **\`$${sales.netSales || '0.00'}\`**
+* **Gross Sales (POS)**: \`₹${sales.grossSales || '0.00'}\`
+* **Loyalty Discounts Given**: \`-₹${sales.totalDiscounts || '0.00'}\`
+* **Net Realized Revenue**: **\`₹${sales.netSales || '0.00'}\`**
 * **Customer Redemptions**: **${sales.redemptionsCount || 0} checkout transactions**
 * **Active Membership Tier Holders**: **${sales.activeMembers || 0} members**
 
@@ -186,7 +186,7 @@ function generateContextualHeuristicReply(userMessage, context) {
     }
 
     const itemsTable = inv.lowStockItems.map(it => 
-      `| **${it.name}** | \`${it.sku}\` | <span style="color:#f87171;font-weight:bold">${it.stock} units</span> | ${it.threshold} units | $${parseFloat(it.price).toFixed(2)} |`
+      `| **${it.name}** | \`${it.sku}\` | <span style="color:#f87171;font-weight:bold">${it.stock} units</span> | ${it.threshold} units | ₹${parseFloat(it.price).toFixed(2)} |`
     ).join('\n');
 
     return `### ⚠️ Low-Stock Reorder Alert: **${inv.lowStockCount} Items at Risk**
@@ -203,12 +203,12 @@ ${itemsTable}
   // Intent 3: Udhaar / Khata / Customer Credit
   if (query.includes('udhaar') || query.includes('khata') || query.includes('credit') || query.includes('debt') || query.includes('owe') || query.includes('due')) {
     const debtorsList = udhaar.topDebtors?.length > 0
-      ? udhaar.topDebtors.map(d => `* **${d.name}** (${d.phone || 'No phone'}): **\`$${parseFloat(d.balance).toFixed(2)}\`** ${d.pendingDueDate ? `(Due: ${String(d.pendingDueDate).split('T')[0]})` : ''}`).join('\n')
+      ? udhaar.topDebtors.map(d => `* **${d.name}** (${d.phone || 'No phone'}): **\`₹${parseFloat(d.balance).toFixed(2)}\`** ${d.pendingDueDate ? `(Due: ${String(d.pendingDueDate).split('T')[0]})` : ''}`).join('\n')
       : '*No pending customer credit balances!*';
 
     return `### 📒 Digital Khata / Market Udhaar Ledger
 
-* **Total Outstanding Market Udhaar**: **\`$${udhaar.totalMarketUdhaar || '0.00'}\`**
+* **Total Outstanding Market Udhaar**: **\`₹${udhaar.totalMarketUdhaar || '0.00'}\`**
 * **Customers with Pending Balance**: **${udhaar.debtorsCount || 0} customers**
 
 #### Top Outstanding Balances:
@@ -241,9 +241,9 @@ Valid through Sunday evening. Bring a friend and enjoy handcrafted favorites!
     const isProf = pnl.isProfitable;
     return `### 📈 Profit & Loss Statement for **${store.name}**
 
-* **Net Sales Revenue**: \`$${sales.netSales || '0.00'}\`
-* **Total Operating Expenses**: \`-$${pnl.totalExpenses || '0.00'}\`
-* **Net Bottom-Line ${isProf ? 'Profit' : 'Loss'}**: **\`${isProf ? '+' : ''}$${pnl.netProfitLoss || '0.00'}\`**
+* **Net Sales Revenue**: \`₹${sales.netSales || '0.00'}\`
+* **Total Operating Expenses**: \`-₹${pnl.totalExpenses || '0.00'}\`
+* **Net Bottom-Line ${isProf ? 'Profit' : 'Loss'}**: **\`${isProf ? '+' : ''}₹${pnl.netProfitLoss || '0.00'}\`**
 
 > 💡 **Observation**: ${isProf 
   ? 'Your store is operating at a positive operating surplus!' 
@@ -256,7 +256,7 @@ Valid through Sunday evening. Bring a friend and enjoy handcrafted favorites!
 
 * **Active Team Members**: **${staff.totalStaff || 0} employees**
 * **Present Today**: **${staff.presentToday || 0} / ${staff.totalStaff || 0} marked present**
-* **Monthly Fixed Payroll Commitment**: **\`$${staff.monthlyPayroll || '0.00'}\`**
+* **Monthly Fixed Payroll Commitment**: **\`₹${staff.monthlyPayroll || '0.00'}\`**
 
 > 📋 Log daily check-ins or mark leaves on the **Staff & Attendance** calendar page.`;
   }
@@ -266,7 +266,7 @@ Valid through Sunday evening. Bring a friend and enjoy handcrafted favorites!
     return `### 🚚 Wholesalers & Accounts Payable
 
 * **Registered Suppliers**: **${suppliers.totalSuppliers || 0} vendors**
-* **Accounts Payable (You Owe Wholesalers)**: **\`$${suppliers.totalPayable || '0.00'}\`**
+* **Accounts Payable (You Owe Wholesalers)**: **\`₹${suppliers.totalPayable || '0.00'}\`**
 
 > 📦 Inward newly arrived stock or send purchase orders directly via WhatsApp from the **Suppliers & POs** screen.`;
   }
@@ -305,15 +305,15 @@ export const chatWithAICopilot = async (req, res, next) => {
 
     if (geminiApiKey && geminiApiKey.trim() !== '') {
       try {
-        const systemPrompt = `You are "Antigravity Copilot", a friendly, knowledgeable, and sharp AI Business Assistant for "${context.store.name}", a ${context.store.category} business owned by ${context.store.owner}.
+        const systemPrompt = `You are "Mithra AI Copilot", a friendly, knowledgeable, and sharp AI Business Assistant for "${context.store.name}", a ${context.store.category} business owned by ${context.store.owner}.
 
 Here is the LIVE real-time store database snapshot:
-- Sales: Gross Sales $${context.sales.grossSales}, Discounts Given -$${context.sales.totalDiscounts}, Net Sales $${context.sales.netSales}, Redemptions: ${context.sales.redemptionsCount}, Active Members: ${context.sales.activeMembers}.
+- Sales: Gross Sales ₹${context.sales.grossSales}, Discounts Given -₹${context.sales.totalDiscounts}, Net Sales ₹${context.sales.netSales}, Redemptions: ${context.sales.redemptionsCount}, Active Members: ${context.sales.activeMembers}.
 - Inventory: Total products: ${context.inventory.totalProducts}, Low stock items (${context.inventory.lowStockCount}): ${JSON.stringify(context.inventory.lowStockItems)}.
-- Digital Khata / Udhaar: Total Market Debt: $${context.udhaar.totalMarketUdhaar}, Debtors (${context.udhaar.debtorsCount}): ${JSON.stringify(context.udhaar.topDebtors)}.
-- P&L: Total Expenses $${context.pnl.totalExpenses}, Net Profit/Loss $${context.pnl.netProfitLoss}.
-- Staff: Active staff: ${context.staff.totalStaff}, Present today: ${context.staff.presentToday}, Monthly payroll: $${context.staff.monthlyPayroll}.
-- Suppliers & Accounts Payable: Total suppliers: ${context.suppliers.totalSuppliers}, Total payable (merchant owes vendors): $${context.suppliers.totalPayable}.
+- Digital Khata / Udhaar: Total Market Debt: ₹${context.udhaar.totalMarketUdhaar}, Debtors (${context.udhaar.debtorsCount}): ${JSON.stringify(context.udhaar.topDebtors)}.
+- P&L: Total Expenses ₹${context.pnl.totalExpenses}, Net Profit/Loss ₹${context.pnl.netProfitLoss}.
+- Staff: Active staff: ${context.staff.totalStaff}, Present today: ${context.staff.presentToday}, Monthly payroll: ₹${context.staff.monthlyPayroll}.
+- Suppliers & Accounts Payable: Total suppliers: ${context.suppliers.totalSuppliers}, Total payable (merchant owes vendors): ₹${context.suppliers.totalPayable}.
 
 INSTRUCTIONS:
 1. Always base your answers on this real-time store data.

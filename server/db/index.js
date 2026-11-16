@@ -906,7 +906,7 @@ class MemoryStore {
         promised_date: null,
         callback_scheduled_at: null,
         payment_link_sent: true,
-        payment_link_url: "https://pay.loyaltyhub.app/upi?pa=artisan@upi&am=1200.00",
+        payment_link_url: "https://pay.mithracrm.app/upi?pa=artisan@upi&am=1200.00",
         upi_intent_string: "upi://pay?pa=artisan@upi&pn=Artisan%20Coffee&am=1200.00&cu=INR&tn=Khata-Settlement-3",
         created_at: new Date(Date.now() - 3600 * 1000 * 3)
       },

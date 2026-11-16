@@ -39,7 +39,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-300">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
-        <div className="text-sm font-semibold tracking-wide">Initializing DiscountMithra ERP SaaS Platform...</div>
+        <div className="text-sm font-semibold tracking-wide">Initializing Mithra CRM Platform...</div>
       </div>
     );
   }

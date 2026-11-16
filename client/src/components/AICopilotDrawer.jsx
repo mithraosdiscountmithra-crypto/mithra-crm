@@ -37,7 +37,7 @@ export default function AICopilotDrawer() {
     {
       id: 'welcome',
       sender: 'ai',
-      text: `### 👋 Welcome to Antigravity AI Copilot!
+      text: `### 👋 Welcome to Mithra AI Copilot!
 
 I am connected to your live store database for **${merchant?.store_name || 'your store'}**. 
 
@@ -180,7 +180,7 @@ I am ready for your next question! Ask about your real-time sales, low stock ale
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-white text-sm sm:text-base tracking-tight">Antigravity Copilot</h3>
+                <h3 className="font-extrabold text-white text-sm sm:text-base tracking-tight">Mithra AI Copilot</h3>
                 <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
                   Live
@@ -257,7 +257,7 @@ I am ready for your next question! Ask about your real-time sales, low stock ale
                       
                       <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[10px] text-slate-500">
                         <span className="font-mono">
-                          {msg.source ? `model: ${msg.source}` : 'Antigravity Store Copilot'}
+                          {msg.source ? `model: ${msg.source}` : 'Mithra Store Copilot'}
                         </span>
                         <button
                           onClick={() => handleCopyText(msg.id, msg.text)}

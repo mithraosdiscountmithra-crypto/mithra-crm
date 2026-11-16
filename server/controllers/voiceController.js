@@ -153,7 +153,7 @@ export const handleVoiceWebhook = async (req, res, next) => {
       upiIntentString = `upi://pay?pa=${merchantUpi}&pn=${encodeURIComponent(storeName)}&am=${formattedBalance}&cu=INR&tn=Khata-Settlement-${customer.id}`;
       
       // Instant web payment redirect link
-      paymentLinkUrl = `https://pay.loyaltyhub.app/upi?pa=${merchantUpi}&am=${formattedBalance}&ref=${customer.id}`;
+      paymentLinkUrl = `https://pay.mithracrm.app/upi?pa=${merchantUpi}&am=${formattedBalance}&ref=${customer.id}`;
 
       // Automatic WhatsApp dispatch message with direct payment link
       const whatsappMsg = `Hi ${customer.name}! ☕\n\nAs requested during our call, here is your direct UPI payment link to settle your pending account balance of *$${formattedBalance}* at *${storeName}*:\n\n👉 *Pay via UPI Link:* ${paymentLinkUrl}\n\nOr click your UPI App: ${upiIntentString}\n\nThank you for your valued support!`;

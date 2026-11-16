@@ -2,7 +2,7 @@ import db from '../db/index.js';
 
 /**
  * Customer Digital Storefront & Ordering Controller
- * DiscountMithra ERP & CRM SaaS Platform
+ * Mithra CRM Platform
  * 
  * Features:
  * 1. GET /api/customer/products?tenant_id=X (live catalog with stock > 0)

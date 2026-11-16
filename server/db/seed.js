@@ -286,7 +286,7 @@ async function seedData() {
         ($1, $3, 'CALL-VOICE-8822', 'COMPLETED', 'REQUEST_PAYMENT_LINK',
          'AI: Hello David, calling regarding your ₹1,200 coffee subscription ledger. David: Can you send me a UPI payment link on WhatsApp? AI: Dispatching your UPI link right now via WhatsApp!',
          'Debtor requested WhatsApp UPI payment link.', NULL, NULL, true, 
-         'https://pay.loyaltyhub.app/upi?pa=artisan@upi&am=1200.00',
+         'https://pay.mithracrm.app/upi?pa=artisan@upi&am=1200.00',
          'upi://pay?pa=artisan@upi&pn=Artisan%20Coffee&am=1200.00&cu=INR&tn=Khata-Settlement-3'),
         
         ($1, $4, 'CALL-VOICE-8833', 'COMPLETED', 'REQUEST_CALLBACK',

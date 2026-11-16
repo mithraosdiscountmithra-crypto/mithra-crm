@@ -44,7 +44,7 @@ export default function Login({ onSwitchToRegister }) {
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center shadow-xl shadow-indigo-500/20 text-3xl mx-auto">
             👑
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">LoyaltyHub CRM</h1>
+          <h1 className="text-2xl font-black text-white tracking-tight">Mithra CRM</h1>
           <p className="text-xs text-slate-400">
             Multi-Tenant Merchant Loyalty & Membership SaaS Platform
           </p>
