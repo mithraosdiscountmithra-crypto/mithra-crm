@@ -51,6 +51,13 @@ class MemoryStore {
     this.debtor_call_logs = [];
     this.customer_orders = [];
     this.customer_order_items = [];
+    this.coupons = [];
+    this.customer_greetings = [];
+    this.customer_feedback = [];
+    this.experiments = [];
+    this.beta_testing_logs = [];
+    this.branches = [];
+    this.roles_permissions = [];
     this.merchantSeq = 1;
     this.planSeq = 1;
     this.customerSeq = 1;
@@ -69,6 +76,13 @@ class MemoryStore {
     this.callLogSeq = 1;
     this.orderSeq = 1;
     this.orderItemSeq = 1;
+    this.couponSeq = 1;
+    this.greetingSeq = 1;
+    this.feedbackSeq = 1;
+    this.experimentSeq = 1;
+    this.betaLogSeq = 1;
+    this.branchSeq = 1;
+    this.roleSeq = 1;
 
     this.seedDemoData();
   }
@@ -829,6 +843,349 @@ class MemoryStore {
 
     this.customer_orders.push(ord1, ord2);
     this.customer_order_items.push(...ord1Items, ...ord2Items);
+
+    // Seed Digital Scratch Cards & Coupons (Marketing Pillar)
+    const coupons = [
+      {
+        id: this.couponSeq++,
+        merchant_id: merchant.id,
+        code: "FESTIVE50",
+        title: "Festive Weekend Flat ₹50 OFF",
+        discount_type: "FLAT",
+        discount_value: 50.00,
+        min_spend: 300.00,
+        max_discount: null,
+        is_scratch_card: false,
+        revealed_perk: null,
+        expiry_date: "2026-12-31",
+        usage_limit: 100,
+        used_count: 14,
+        is_active: true,
+        created_at: new Date()
+      },
+      {
+        id: this.couponSeq++,
+        merchant_id: merchant.id,
+        code: "MITHRAGIFT25",
+        title: "VIP Scratch Card Special",
+        discount_type: "PERCENT",
+        discount_value: 25.00,
+        min_spend: 200.00,
+        max_discount: 150.00,
+        is_scratch_card: true,
+        revealed_perk: "Free Cold Brew with any Bagel",
+        expiry_date: "2026-11-30",
+        usage_limit: 50,
+        used_count: 8,
+        is_active: true,
+        created_at: new Date()
+      },
+      {
+        id: this.couponSeq++,
+        merchant_id: merchant.id,
+        code: "BIRTHDAY100",
+        title: "Birthday Celebration Gift Card",
+        discount_type: "FLAT",
+        discount_value: 100.00,
+        min_spend: 250.00,
+        max_discount: null,
+        is_scratch_card: true,
+        revealed_perk: "Complimentary Artisanal Dessert Slice",
+        expiry_date: "2026-12-31",
+        usage_limit: 50,
+        used_count: 5,
+        is_active: true,
+        created_at: new Date()
+      }
+    ];
+    this.coupons.push(...coupons);
+
+    // Seed Automated Greetings Queue (Marketing Pillar)
+    const greetings = [
+      {
+        id: this.greetingSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[0].id, // Alex Rivera
+        greeting_type: "BIRTHDAY",
+        event_date: "2026-11-18",
+        scheduled_date: "2026-11-18",
+        channel: "WHATSAPP",
+        message: "🎂 Happy Birthday Alex Rivera! Enjoy ₹100 off your coffee order with code BIRTHDAY100 at Artisan Coffee Roasters.",
+        status: "SCHEDULED",
+        coupon_code: "BIRTHDAY100",
+        sent_at: null,
+        created_at: new Date()
+      },
+      {
+        id: this.greetingSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[1].id, // Emily Watson
+        greeting_type: "ANNIVERSARY",
+        event_date: "2026-11-20",
+        scheduled_date: "2026-11-20",
+        channel: "WHATSAPP",
+        message: "💍 Happy Anniversary Emily Watson! Thank you for being our valued patron. Enjoy 25% off with code MITHRAGIFT25.",
+        status: "SCHEDULED",
+        coupon_code: "MITHRAGIFT25",
+        sent_at: null,
+        created_at: new Date()
+      },
+      {
+        id: this.greetingSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[2].id, // David Chen
+        greeting_type: "BIRTHDAY",
+        event_date: "2026-11-10",
+        scheduled_date: "2026-11-10",
+        channel: "WHATSAPP",
+        message: "🎉 Happy Birthday David! Celebrate with ₹100 off your favorite cold brew with code BIRTHDAY100.",
+        status: "SENT",
+        coupon_code: "BIRTHDAY100",
+        sent_at: new Date(Date.now() - 3600 * 1000 * 24 * 6),
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 7)
+      }
+    ];
+    this.customer_greetings.push(...greetings);
+
+    // Seed Customer Feedback & NPS Logs (R&D Pillar)
+    const feedbackList = [
+      {
+        id: this.feedbackSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[0].id,
+        customer_name: "Alex Rivera",
+        customer_phone: "5551234567",
+        rating: 5,
+        sentiment: "POSITIVE",
+        category: "Quality",
+        feedback_text: "The Ethiopian Yirgacheffe roast is genuinely the best single origin in town. Incredible citrus notes!",
+        status: "ACKNOWLEDGED",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 2)
+      },
+      {
+        id: this.feedbackSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[1].id,
+        customer_name: "Emily Watson",
+        customer_phone: "5552345678",
+        rating: 4,
+        sentiment: "POSITIVE",
+        category: "Ambience",
+        feedback_text: "Lovely cafe vibes and fast WiFi, perfect for remote working. A bit crowded during lunchtime though.",
+        status: "NEW",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 3)
+      },
+      {
+        id: this.feedbackSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[2].id,
+        customer_name: "David Chen",
+        customer_phone: "5553456789",
+        rating: 3,
+        sentiment: "NEUTRAL",
+        category: "Speed",
+        feedback_text: "Coffee is great but checkout line took almost 10 minutes on Saturday morning. Fast POS helped though.",
+        status: "NEW",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 4)
+      },
+      {
+        id: this.feedbackSeq++,
+        merchant_id: merchant.id,
+        customer_id: null,
+        customer_name: "Priya Sharma",
+        customer_phone: "9876541122",
+        rating: 5,
+        sentiment: "POSITIVE",
+        category: "Service",
+        feedback_text: "Cashier was super helpful and verified my Mithra Plus membership in seconds. Saved ₹130!",
+        status: "ACKNOWLEDGED",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 1)
+      }
+    ];
+    this.customer_feedback.push(...feedbackList);
+
+    // Seed Feature Experiments (R&D Pillar)
+    const experimentsList = [
+      {
+        id: this.experimentSeq++,
+        merchant_id: merchant.id,
+        test_name: "VIP Tier Free Doorstep Delivery vs Flat ₹50 Coupon",
+        hypothesis: "Offering free doorstep delivery to VIP members will increase repeat orders by 25% compared to ₹50 coupon.",
+        target_segment: "VIP",
+        variant_a: "Free Delivery on All Orders",
+        variant_b: "Flat ₹50 Coupon on ₹300+",
+        conversion_metric: "7-Day Repeat Order Rate",
+        status: "RUNNING",
+        sample_size: 140,
+        conversion_rate_a: 32.50,
+        conversion_rate_b: 24.00,
+        results_summary: "Variant A (Free Delivery) is outperforming by +8.5% conversion uplift.",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 12)
+      },
+      {
+        id: this.experimentSeq++,
+        merchant_id: merchant.id,
+        test_name: "Interactive Digital Scratch Card vs Plain SMS Coupon",
+        hypothesis: "Digital scratch cards with reveal animation increase redemption rate by over 40%.",
+        target_segment: "ALL",
+        variant_a: "Interactive Scratch Card URL",
+        variant_b: "Standard Plain SMS Discount Code",
+        conversion_metric: "Redemption Rate %",
+        status: "CONCLUDED",
+        sample_size: 250,
+        conversion_rate_a: 44.80,
+        conversion_rate_b: 18.20,
+        results_summary: "Concluded with high statistical significance: Scratch cards increased redemptions by 2.4x.",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 25)
+      }
+    ];
+    this.experiments.push(...experimentsList);
+
+    // Seed Beta Testing Logs (R&D Pillar)
+    const betaLogs = [
+      {
+        id: this.betaLogSeq++,
+        merchant_id: merchant.id,
+        feature_name: "AI Voice Debtor Callback Scheduler",
+        tester_name: "Alex Rivera",
+        tester_phone: "5551234567",
+        feedback_type: "UX_FEEDBACK",
+        severity: "LOW",
+        description: "Voice bot sounded very polite and dispatched the WhatsApp payment link within 3 seconds. Very convenient!",
+        status: "RESOLVED",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 2)
+      },
+      {
+        id: this.betaLogSeq++,
+        merchant_id: merchant.id,
+        feature_name: "Customer Storefront Pay Later (Khata)",
+        tester_name: "David Chen",
+        tester_phone: "5553456789",
+        feedback_type: "FEATURE_REQUEST",
+        severity: "MEDIUM",
+        description: "Would love to see my current remaining Khata credit limit displayed directly inside the storefront checkout drawer.",
+        status: "OPEN",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 1)
+      },
+      {
+        id: this.betaLogSeq++,
+        merchant_id: merchant.id,
+        feature_name: "AiSensy WhatsApp Template Sync",
+        tester_name: "Sarah Jenkins (Owner)",
+        tester_phone: "5550199999",
+        feedback_type: "BUG",
+        severity: "LOW",
+        description: "Variable tag {customer_name} should trim whitespace before encoding.",
+        status: "RESOLVED",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 5)
+      }
+    ];
+    this.beta_testing_logs.push(...betaLogs);
+
+    // Seed Multi-Branch Outlets (Executive Pillar)
+    const branchesList = [
+      {
+        id: this.branchSeq++,
+        merchant_id: merchant.id,
+        branch_name: "Artisan Coffee - Flagship Roastery",
+        branch_code: "BR-MAIN-01",
+        address: "100 Specialty Way, Indiranagar",
+        city: "Bengaluru",
+        phone: "+91-80-2345-0001",
+        manager_name: "Sarah Jenkins",
+        daily_target: 35000.00,
+        is_active: true,
+        created_at: new Date()
+      },
+      {
+        id: this.branchSeq++,
+        merchant_id: merchant.id,
+        branch_name: "Artisan Coffee - Downtown Tech Park",
+        branch_code: "BR-DOWN-02",
+        address: "Tech Hub, 3rd Floor, Outer Ring Rd",
+        city: "Bengaluru",
+        phone: "+91-80-2345-0002",
+        manager_name: "Vikram Rathore",
+        daily_target: 28000.00,
+        is_active: true,
+        created_at: new Date()
+      },
+      {
+        id: this.branchSeq++,
+        merchant_id: merchant.id,
+        branch_name: "Artisan Coffee - Airport Express Kiosk",
+        branch_code: "BR-AIR-03",
+        address: "Terminal 2 Departures, Kempegowda Intl",
+        city: "Bengaluru",
+        phone: "+91-80-2345-0003",
+        manager_name: "Anita Desai",
+        daily_target: 45000.00,
+        is_active: true,
+        created_at: new Date()
+      }
+    ];
+    this.branches.push(...branchesList);
+
+    // Seed Role-Based Access Control (RBAC HR Pillar)
+    const rolesList = [
+      {
+        id: this.roleSeq++,
+        merchant_id: merchant.id,
+        role_name: "Owner / CEO",
+        description: "Full unrestricted administrative access to all 7 Pillars & Executive Suite",
+        can_executive: true,
+        can_marketing: true,
+        can_pos: true,
+        can_operations: true,
+        can_rd: true,
+        can_finance: true,
+        can_hr: true,
+        created_at: new Date()
+      },
+      {
+        id: this.roleSeq++,
+        merchant_id: merchant.id,
+        role_name: "Store Manager",
+        description: "Operations, POS terminal, staff attendance, customer relations and marketing campaigns",
+        can_executive: false,
+        can_marketing: true,
+        can_pos: true,
+        can_operations: true,
+        can_rd: true,
+        can_finance: false,
+        can_hr: true,
+        created_at: new Date()
+      },
+      {
+        id: this.roleSeq++,
+        merchant_id: merchant.id,
+        role_name: "Cashier / Front Desk",
+        description: "Fast POS checkout billing, member lookup, voucher redemption, customer feedback",
+        can_executive: false,
+        can_marketing: false,
+        can_pos: true,
+        can_operations: false,
+        can_rd: true,
+        can_finance: false,
+        can_hr: false,
+        created_at: new Date()
+      },
+      {
+        id: this.roleSeq++,
+        merchant_id: merchant.id,
+        role_name: "Chief Accountant",
+        description: "Digital Khata ledger, supplier payments, expenses, P&L reports, and GST compliance",
+        can_executive: false,
+        can_marketing: false,
+        can_pos: false,
+        can_operations: true,
+        can_rd: false,
+        can_finance: true,
+        can_hr: true,
+        created_at: new Date()
+      }
+    ];
+    this.roles_permissions.push(...rolesList);
   }
 }
 
@@ -1179,6 +1536,19 @@ function executeMemoryQuery(text, params) {
     return { rows: [newRedemption], rowCount: 1 };
   }
 
+  // Simple redemptions list: SELECT * FROM redemptions WHERE merchant_id = $1
+  if (normalized.includes('FROM redemptions') && !normalized.includes('FROM redemptions r') && normalized.includes('WHERE merchant_id = $1')) {
+    const merchant_id = parseInt(params[0], 10);
+    const rows = memoryStore.redemptions.filter(r => r.merchant_id === merchant_id);
+    return { rows, rowCount: rows.length };
+  }
+
+  // Active customer memberships
+  if (normalized.includes('FROM customer_memberships') && normalized.includes("status = 'ACTIVE'")) {
+    const rows = memoryStore.customer_memberships.filter(m => m.status === 'ACTIVE');
+    return { rows, rowCount: rows.length };
+  }
+
   // 17. Redemptions List for Merchant:
   if (normalized.includes('FROM redemptions r') && normalized.includes('WHERE r.merchant_id = $1')) {
     const merchant_id = parseInt(params[0], 10);
@@ -1442,6 +1812,13 @@ function executeMemoryQuery(text, params) {
         };
       })
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return { rows, rowCount: rows.length };
+  }
+
+  // Simple customer ledgers list: SELECT * FROM customer_ledgers WHERE merchant_id = $1
+  if ((normalized.includes('FROM customer_ledgers') || normalized.includes('FROM customer_khata')) && !normalized.includes('FROM customer_ledgers cl') && normalized.includes('WHERE merchant_id = $1')) {
+    const merchant_id = parseInt(params[0], 10);
+    const rows = memoryStore.customer_ledgers.filter(l => l.merchant_id === merchant_id);
     return { rows, rowCount: rows.length };
   }
 
@@ -2074,6 +2451,326 @@ function executeMemoryQuery(text, params) {
     if (order) {
       order.status = status;
       return { rows: [order], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
+  // 70. SELECT FROM coupons WHERE merchant_id = $1 AND code = $2
+  if (normalized.includes('FROM coupons') && normalized.includes('code = $2')) {
+    const merchant_id = parseInt(params[0], 10);
+    const code = String(params[1]).trim().toUpperCase();
+    const coupon = memoryStore.coupons.find(
+      c => c.merchant_id === merchant_id && c.code.toUpperCase() === code && c.is_active !== false
+    );
+    return { rows: coupon ? [coupon] : [], rowCount: coupon ? 1 : 0 };
+  }
+
+  // 71. SELECT FROM coupons WHERE merchant_id = $1
+  if (normalized.includes('FROM coupons WHERE merchant_id = $1')) {
+    const merchant_id = parseInt(params[0], 10);
+    const rows = memoryStore.coupons
+      .filter(c => c.merchant_id === merchant_id)
+      .sort((a, b) => b.id - a.id);
+    return { rows, rowCount: rows.length };
+  }
+
+  // 72. INSERT INTO coupons
+  if (normalized.startsWith('INSERT INTO coupons')) {
+    const [
+      merchant_id, code, title, discount_type, discount_value,
+      min_spend, max_discount, is_scratch_card, revealed_perk,
+      expiry_date, usage_limit
+    ] = params;
+    const newCoupon = {
+      id: memoryStore.couponSeq++,
+      merchant_id: parseInt(merchant_id, 10),
+      code: String(code).trim().toUpperCase(),
+      title: title || '',
+      discount_type: discount_type || 'PERCENT',
+      discount_value: parseFloat(discount_value) || 10.00,
+      min_spend: parseFloat(min_spend) || 0.00,
+      max_discount: max_discount ? parseFloat(max_discount) : null,
+      is_scratch_card: Boolean(is_scratch_card),
+      revealed_perk: revealed_perk || null,
+      expiry_date: expiry_date || null,
+      usage_limit: parseInt(usage_limit, 10) || 100,
+      used_count: 0,
+      is_active: true,
+      created_at: new Date()
+    };
+    memoryStore.coupons.push(newCoupon);
+    return { rows: [newCoupon], rowCount: 1 };
+  }
+
+  // 73. DELETE FROM coupons WHERE id = $1 AND merchant_id = $2
+  if (normalized.startsWith('DELETE FROM coupons')) {
+    const [id, merchant_id] = params;
+    const idx = memoryStore.coupons.findIndex(
+      c => c.id === parseInt(id, 10) && c.merchant_id === parseInt(merchant_id, 10)
+    );
+    if (idx !== -1) {
+      memoryStore.coupons.splice(idx, 1);
+      return { rowCount: 1 };
+    }
+    return { rowCount: 0 };
+  }
+
+  // 74. SELECT FROM customer_greetings WHERE merchant_id = $1
+  if (normalized.includes('FROM customer_greetings WHERE merchant_id = $1')) {
+    const merchant_id = parseInt(params[0], 10);
+    const rows = memoryStore.customer_greetings
+      .filter(g => g.merchant_id === merchant_id)
+      .sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date));
+    return { rows, rowCount: rows.length };
+  }
+
+  // 75. INSERT INTO customer_greetings
+  if (normalized.startsWith('INSERT INTO customer_greetings')) {
+    const [merchant_id, customer_id, greeting_type, event_date, scheduled_date, channel, message, coupon_code] = params;
+    const newGreeting = {
+      id: memoryStore.greetingSeq++,
+      merchant_id: parseInt(merchant_id, 10),
+      customer_id: customer_id ? parseInt(customer_id, 10) : null,
+      greeting_type: greeting_type || 'BIRTHDAY',
+      event_date,
+      scheduled_date,
+      channel: channel || 'WHATSAPP',
+      message,
+      status: 'SCHEDULED',
+      coupon_code: coupon_code || null,
+      sent_at: null,
+      created_at: new Date()
+    };
+    memoryStore.customer_greetings.push(newGreeting);
+    return { rows: [newGreeting], rowCount: 1 };
+  }
+
+  // 76. UPDATE customer_greetings SET status = $1
+  if (normalized.includes('UPDATE customer_greetings SET status = $1')) {
+    const [status, id, merchant_id] = params;
+    const greeting = memoryStore.customer_greetings.find(
+      g => g.id === parseInt(id, 10) && g.merchant_id === parseInt(merchant_id, 10)
+    );
+    if (greeting) {
+      greeting.status = status;
+      if (status === 'SENT') greeting.sent_at = new Date();
+      return { rows: [greeting], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
+  // 77. SELECT FROM customer_feedback WHERE merchant_id = $1
+  if (normalized.includes('FROM customer_feedback WHERE merchant_id = $1')) {
+    const merchant_id = parseInt(params[0], 10);
+    const rows = memoryStore.customer_feedback
+      .filter(f => f.merchant_id === merchant_id)
+      .sort((a, b) => b.id - a.id);
+    return { rows, rowCount: rows.length };
+  }
+
+  // 78. INSERT INTO customer_feedback
+  if (normalized.startsWith('INSERT INTO customer_feedback')) {
+    const [merchant_id, customer_id, customer_name, customer_phone, rating, sentiment, category, feedback_text] = params;
+    const newFeedback = {
+      id: memoryStore.feedbackSeq++,
+      merchant_id: parseInt(merchant_id, 10),
+      customer_id: customer_id ? parseInt(customer_id, 10) : null,
+      customer_name: customer_name || 'Anonymous Guest',
+      customer_phone: customer_phone || null,
+      rating: parseInt(rating, 10) || 5,
+      sentiment: sentiment || 'POSITIVE',
+      category: category || 'Quality',
+      feedback_text: feedback_text || '',
+      status: 'NEW',
+      created_at: new Date()
+    };
+    memoryStore.customer_feedback.push(newFeedback);
+    return { rows: [newFeedback], rowCount: 1 };
+  }
+
+  // 79. UPDATE customer_feedback SET status = $1
+  if (normalized.includes('UPDATE customer_feedback SET status = $1')) {
+    const [status, id, merchant_id] = params;
+    const fb = memoryStore.customer_feedback.find(
+      f => f.id === parseInt(id, 10) && f.merchant_id === parseInt(merchant_id, 10)
+    );
+    if (fb) {
+      fb.status = status;
+      return { rows: [fb], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
+  // 80. SELECT FROM experiments WHERE merchant_id = $1
+  if (normalized.includes('FROM experiments WHERE merchant_id = $1')) {
+    const merchant_id = parseInt(params[0], 10);
+    const rows = memoryStore.experiments
+      .filter(e => e.merchant_id === merchant_id)
+      .sort((a, b) => b.id - a.id);
+    return { rows, rowCount: rows.length };
+  }
+
+  // 81. INSERT INTO experiments
+  if (normalized.startsWith('INSERT INTO experiments')) {
+    const [merchant_id, test_name, hypothesis, target_segment, variant_a, variant_b, conversion_metric] = params;
+    const newExp = {
+      id: memoryStore.experimentSeq++,
+      merchant_id: parseInt(merchant_id, 10),
+      test_name,
+      hypothesis,
+      target_segment: target_segment || 'ALL',
+      variant_a,
+      variant_b,
+      conversion_metric,
+      status: 'RUNNING',
+      sample_size: 0,
+      conversion_rate_a: 0.00,
+      conversion_rate_b: 0.00,
+      results_summary: 'Test initiated. Collecting live customer conversion data.',
+      created_at: new Date()
+    };
+    memoryStore.experiments.push(newExp);
+    return { rows: [newExp], rowCount: 1 };
+  }
+
+  // 82. UPDATE experiments SET status = $1
+  if (normalized.includes('UPDATE experiments SET status = $1')) {
+    const [status, id, merchant_id] = params;
+    const exp = memoryStore.experiments.find(
+      e => e.id === parseInt(id, 10) && e.merchant_id === parseInt(merchant_id, 10)
+    );
+    if (exp) {
+      exp.status = status;
+      return { rows: [exp], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
+  // 83. SELECT FROM beta_testing_logs WHERE merchant_id = $1
+  if (normalized.includes('FROM beta_testing_logs WHERE merchant_id = $1')) {
+    const merchant_id = parseInt(params[0], 10);
+    const rows = memoryStore.beta_testing_logs
+      .filter(b => b.merchant_id === merchant_id)
+      .sort((a, b) => b.id - a.id);
+    return { rows, rowCount: rows.length };
+  }
+
+  // 84. INSERT INTO beta_testing_logs
+  if (normalized.startsWith('INSERT INTO beta_testing_logs')) {
+    const [merchant_id, feature_name, tester_name, tester_phone, feedback_type, severity, description] = params;
+    const newLog = {
+      id: memoryStore.betaLogSeq++,
+      merchant_id: parseInt(merchant_id, 10),
+      feature_name,
+      tester_name,
+      tester_phone,
+      feedback_type: feedback_type || 'BUG',
+      severity: severity || 'MEDIUM',
+      description,
+      status: 'OPEN',
+      created_at: new Date()
+    };
+    memoryStore.beta_testing_logs.push(newLog);
+    return { rows: [newLog], rowCount: 1 };
+  }
+
+  // 85. UPDATE beta_testing_logs SET status = $1
+  if (normalized.includes('UPDATE beta_testing_logs SET status = $1')) {
+    const [status, id, merchant_id] = params;
+    const log = memoryStore.beta_testing_logs.find(
+      b => b.id === parseInt(id, 10) && b.merchant_id === parseInt(merchant_id, 10)
+    );
+    if (log) {
+      log.status = status;
+      return { rows: [log], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
+  // 86. SELECT FROM branches WHERE merchant_id = $1
+  if (normalized.includes('FROM branches WHERE merchant_id = $1')) {
+    const merchant_id = parseInt(params[0], 10);
+    const rows = memoryStore.branches
+      .filter(b => b.merchant_id === merchant_id)
+      .sort((a, b) => a.id - b.id);
+    return { rows, rowCount: rows.length };
+  }
+
+  // 87. INSERT INTO branches
+  if (normalized.startsWith('INSERT INTO branches')) {
+    const [merchant_id, branch_name, branch_code, address, city, phone, manager_name, daily_target] = params;
+    const newBranch = {
+      id: memoryStore.branchSeq++,
+      merchant_id: parseInt(merchant_id, 10),
+      branch_name,
+      branch_code,
+      address,
+      city,
+      phone,
+      manager_name,
+      daily_target: parseFloat(daily_target) || 25000.00,
+      is_active: true,
+      created_at: new Date()
+    };
+    memoryStore.branches.push(newBranch);
+    return { rows: [newBranch], rowCount: 1 };
+  }
+
+  // 88. SELECT FROM roles_permissions WHERE merchant_id = $1
+  if (normalized.includes('FROM roles_permissions WHERE merchant_id = $1')) {
+    const merchant_id = parseInt(params[0], 10);
+    const rows = memoryStore.roles_permissions
+      .filter(r => r.merchant_id === merchant_id)
+      .sort((a, b) => a.id - b.id);
+    return { rows, rowCount: rows.length };
+  }
+
+  // 89. INSERT INTO roles_permissions
+  if (normalized.startsWith('INSERT INTO roles_permissions')) {
+    const [
+      merchant_id, role_name, description,
+      can_executive, can_marketing, can_pos, can_operations,
+      can_rd, can_finance, can_hr
+    ] = params;
+    const newRole = {
+      id: memoryStore.roleSeq++,
+      merchant_id: parseInt(merchant_id, 10),
+      role_name,
+      description: description || '',
+      can_executive: Boolean(can_executive),
+      can_marketing: Boolean(can_marketing),
+      can_pos: Boolean(can_pos),
+      can_operations: Boolean(can_operations),
+      can_rd: Boolean(can_rd),
+      can_finance: Boolean(can_finance),
+      can_hr: Boolean(can_hr),
+      created_at: new Date()
+    };
+    memoryStore.roles_permissions.push(newRole);
+    return { rows: [newRole], rowCount: 1 };
+  }
+
+  // 90. UPDATE roles_permissions
+  if (normalized.startsWith('UPDATE roles_permissions SET')) {
+    const [
+      role_name, description,
+      can_executive, can_marketing, can_pos, can_operations,
+      can_rd, can_finance, can_hr, id, merchant_id
+    ] = params;
+    const role = memoryStore.roles_permissions.find(
+      r => r.id === parseInt(id, 10) && r.merchant_id === parseInt(merchant_id, 10)
+    );
+    if (role) {
+      role.role_name = role_name;
+      role.description = description;
+      role.can_executive = Boolean(can_executive);
+      role.can_marketing = Boolean(can_marketing);
+      role.can_pos = Boolean(can_pos);
+      role.can_operations = Boolean(can_operations);
+      role.can_rd = Boolean(can_rd);
+      role.can_finance = Boolean(can_finance);
+      role.can_hr = Boolean(can_hr);
+      return { rows: [role], rowCount: 1 };
     }
     return { rows: [], rowCount: 0 };
   }

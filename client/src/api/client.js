@@ -167,6 +167,57 @@ export const api = {
       request(`/customer/orders?tenant_id=${tenantId}${phone ? `&phone=${encodeURIComponent(phone)}` : ''}`),
     getMerchantOrders: () => request('/customer/merchant-orders'),
     updateOrderStatus: (id, status) => request(`/customer/orders/${id}/status`, { method: 'PUT', body: { status } }),
+  },
+
+  // 1. Marketing Pillar (AiSensy, Coupons, Greetings)
+  marketing: {
+    triggerAiSensy: (data) => request('/marketing/aisensy-campaign', { method: 'POST', body: data }),
+    getCoupons: () => request('/marketing/coupons'),
+    createCoupon: (data) => request('/marketing/coupons', { method: 'POST', body: data }),
+    verifyCoupon: (code, bill_amount) => request('/marketing/coupons/verify', { method: 'POST', body: { code, bill_amount } }),
+    deleteCoupon: (id) => request(`/marketing/coupons/${id}`, { method: 'DELETE' }),
+    getGreetings: () => request('/marketing/greetings'),
+    triggerGreeting: (id) => request(`/marketing/greetings/${id}/trigger`, { method: 'POST' }),
+  },
+
+  // 2. Sales Pillar (Daily Sales Analytics & Breakdown)
+  sales: {
+    getDailyAnalytics: () => request('/sales/daily-analytics'),
+  },
+
+  // 3. Operations Pillar (Auto-PO & Health Summary)
+  operations: {
+    generateAutoPO: () => request('/operations/auto-po', { method: 'POST' }),
+    getSummary: () => request('/operations/summary'),
+  },
+
+  // 4. R&D Pillar (Feedback, Experiments, Beta Logs)
+  rd: {
+    getFeedback: () => request('/rd/feedback'),
+    submitFeedback: (data) => request('/rd/feedback', { method: 'POST', body: data }),
+    getExperiments: () => request('/rd/experiments'),
+    createExperiment: (data) => request('/rd/experiments', { method: 'POST', body: data }),
+    updateExperimentStatus: (id, status) => request(`/rd/experiments/${id}/status`, { method: 'PUT', body: { status } }),
+    getBetaLogs: () => request('/rd/beta-logs'),
+    submitBetaLog: (data) => request('/rd/beta-logs', { method: 'POST', body: data }),
+    updateBetaLogStatus: (id, status) => request(`/rd/beta-logs/${id}/status`, { method: 'PUT', body: { status } }),
+  },
+
+  // 5. Accounts & Finance Pillar (GST & Tax Compliance Report)
+  finance: {
+    getTaxReport: () => request('/finance/tax-report'),
+  },
+
+  // 6. HR & Staff Pillar (Payroll & RBAC Matrix)
+  hr: {
+    getPayrollCalculation: () => request('/hr/payroll-calculation'),
+    getRBACMatrix: () => request('/hr/rbac'),
+    updateRBACRole: (id, data) => request(`/hr/rbac/${id}`, { method: 'PUT', body: data }),
+  },
+
+  // 7. Executive Dashboard Pillar (CEO KPI Suite & Multi-Branch)
+  executive: {
+    getOverview: () => request('/executive/overview'),
   }
 };
 

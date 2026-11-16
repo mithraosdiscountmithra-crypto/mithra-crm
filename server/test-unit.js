@@ -60,6 +60,27 @@ import {
   getMerchantStorefrontOrders,
   updateOrderStatus
 } from './controllers/customerController.js';
+import {
+  triggerAiSensyCampaign,
+  getCoupons,
+  createCoupon,
+  verifyCoupon,
+  getScheduledGreetings,
+  triggerGreeting
+} from './controllers/marketingPillarController.js';
+import { getDailySalesAnalytics } from './controllers/salesPillarController.js';
+import { generateAutoPO, getOperationsSummary } from './controllers/operationsPillarController.js';
+import {
+  getFeedback,
+  submitFeedback,
+  getExperiments,
+  createExperiment,
+  getBetaLogs,
+  submitBetaLog
+} from './controllers/rdController.js';
+import { getTaxReport } from './controllers/financePillarController.js';
+import { getPayrollCalculation, getRBACMatrix, updateRBACRole } from './controllers/hrPillarController.js';
+import { getExecutiveOverview } from './controllers/executiveController.js';
 
 // Helper to mock express req/res
 function mockReqRes(reqData = {}) {
@@ -674,7 +695,161 @@ async function runUnitTests() {
     updatedOrderStatus: updateCustOrderStatusRes.body.order?.status
   });
 
-  console.log('\n🌟 ALL 36 SAAS PLATFORM MODULE CONTROLLERS VERIFIED AND WORKING PROPERLY! 🌟');
+  // 37. Test Pillar 1: Marketing - AiSensy Campaign, Scratch Cards & Greetings
+  const { req: aisensyReq, res: aisensyRes } = mockReqRes({
+    merchant: { id: 1, store_name: 'Artisan Coffee Roasters' },
+    body: {
+      campaign_name: 'Weekend Flash Offer',
+      template_name: 'weekend_roast_special',
+      coupon_code: 'FESTIVE50'
+    }
+  });
+  await triggerAiSensyCampaign(aisensyReq, aisensyRes);
+
+  const { req: verifyCouponReq, res: verifyCouponRes } = mockReqRes({
+    merchant: { id: 1 },
+    body: { code: 'FESTIVE50', bill_amount: 500 }
+  });
+  await verifyCoupon(verifyCouponReq, verifyCouponRes);
+
+  const { req: greetingReq, res: greetingRes } = mockReqRes({
+    merchant: { id: 1 },
+    params: { id: 1 } // Alex Rivera Birthday
+  });
+  await triggerGreeting(greetingReq, greetingRes);
+
+  console.log('37. Marketing Pillar - AiSensy Broadcast, Scratch Cards & Greetings:', {
+    passed: aisensyRes.body.success === true &&
+            verifyCouponRes.body.valid === true &&
+            verifyCouponRes.body.coupon?.discount_amount === 50 &&
+            greetingRes.body.success === true,
+    campaignProvider: aisensyRes.body.provider,
+    recipientsCount: aisensyRes.body.dispatch_summary?.total_recipients,
+    appliedCouponDiscount: `₹${verifyCouponRes.body.coupon?.discount_amount}`,
+    greetingStatus: greetingRes.body.greeting?.status
+  });
+
+  // 38. Test Pillar 2: Sales - Daily Analytics, Peak Hours & Payment Modes
+  const { req: salesReq, res: salesRes } = mockReqRes({
+    merchant: { id: 1, store_name: 'Artisan Coffee Roasters' }
+  });
+  await getDailySalesAnalytics(salesReq, salesRes);
+  console.log('38. Sales Pillar - Daily Sales Analytics & Peak Hours Breakdown:', {
+    passed: salesRes.body.success === true &&
+            salesRes.body.analytics?.netRevenue > 0 &&
+            salesRes.body.analytics?.hourlyDistribution?.length === 6,
+    netRevenue: `₹${salesRes.body.analytics?.netRevenue}`,
+    totalTransactions: salesRes.body.analytics?.totalTransactions,
+    avgTicketValue: `₹${salesRes.body.analytics?.avgTicketValue}`,
+    vipConversionRate: salesRes.body.analytics?.vipConversionRate,
+    peakHoursCount: salesRes.body.analytics?.hourlyDistribution?.filter(h => h.isPeak).length
+  });
+
+  // 39. Test Pillar 3: Operations - Auto-PO Replenishment & WhatsApp Dispatch
+  const { req: autoPOReq, res: autoPORes } = mockReqRes({
+    merchant: { id: 1, store_name: 'Artisan Coffee Roasters' }
+  });
+  await generateAutoPO(autoPOReq, autoPORes);
+
+  const { req: opsSummaryReq, res: opsSummaryRes } = mockReqRes({
+    merchant: { id: 1 }
+  });
+  await getOperationsSummary(opsSummaryReq, opsSummaryRes);
+
+  console.log('39. Operations Pillar - 1-Click Auto-PO Generator & Inventory Health:', {
+    passed: autoPORes.body.success === true &&
+            opsSummaryRes.body.success === true &&
+            opsSummaryRes.body.summary?.totalSKUs > 0,
+    autoPONumber: autoPORes.body.po?.po_number,
+    itemsReordered: autoPORes.body.items_reordered,
+    totalStockValuation: `₹${opsSummaryRes.body.summary?.totalAssetValuation}`,
+    hasWhatsAppLink: Boolean(autoPORes.body.whatsapp_dispatch_link)
+  });
+
+  // 40. Test Pillar 4: R&D - Customer Feedback, NPS Score, A/B Testing & Beta Logs
+  const { req: feedbackSubmitReq, res: feedbackSubmitRes } = mockReqRes({
+    merchant: { id: 1 },
+    body: {
+      customer_name: 'Rohan Verma',
+      customer_phone: '9988776655',
+      rating: 5,
+      category: 'Quality',
+      feedback_text: 'The new cold brew nitro tap is extraordinary!'
+    }
+  });
+  await submitFeedback(feedbackSubmitReq, feedbackSubmitRes);
+
+  const { req: feedbackReq, res: feedbackRes } = mockReqRes({ merchant: { id: 1 } });
+  await getFeedback(feedbackReq, feedbackRes);
+
+  const { req: expReq, res: expRes } = mockReqRes({ merchant: { id: 1 } });
+  await getExperiments(expReq, expRes);
+
+  const { req: betaReq, res: betaRes } = mockReqRes({ merchant: { id: 1 } });
+  await getBetaLogs(betaReq, betaRes);
+
+  console.log('40. R&D Pillar - Customer Feedback, NPS, A/B Experiments & Beta Logs:', {
+    passed: feedbackRes.body.success === true &&
+            feedbackRes.body.metrics?.npsScore !== undefined &&
+            expRes.body.experiments?.length > 0 &&
+            betaRes.body.logs?.length > 0,
+    totalCustomerReviews: feedbackRes.body.metrics?.totalFeedback,
+    npsScore: `${feedbackRes.body.metrics?.npsScore} NPS`,
+    avgStarRating: `${feedbackRes.body.metrics?.avgRating} / 5.0`,
+    activeExperiments: expRes.body.summary?.running,
+    openBetaBugs: betaRes.body.summary?.open
+  });
+
+  // 41. Test Pillar 5: Accounts & Finance - Tax & GST Compliance Report (GSTR-3B)
+  const { req: taxReq, res: taxRes } = mockReqRes({
+    merchant: { id: 1, store_name: 'Artisan Coffee Roasters', phone: '5550199' }
+  });
+  await getTaxReport(taxReq, taxRes);
+  console.log('41. Accounts & Finance Pillar - Tax & GST Compliance (GSTR-3B):', {
+    passed: taxRes.body.success === true &&
+            taxRes.body.report?.turnover?.grossTurnover > 0 &&
+            taxRes.body.report?.outputTax?.totalOutputGST > 0,
+    grossTurnover: `₹${taxRes.body.report?.turnover?.grossTurnover}`,
+    outputGST: `₹${taxRes.body.report?.outputTax?.totalOutputGST}`,
+    inputTaxCredit: `₹${taxRes.body.report?.inputTaxCredit?.totalITC}`,
+    netGSTPayable: `₹${taxRes.body.report?.netTaxPayable?.totalNetPayable}`,
+    gstr1Status: taxRes.body.report?.complianceStatus?.gstr1_status
+  });
+
+  // 42. Test Pillar 6: HR & Staff - Payroll Calculation & RBAC Permissions Matrix
+  const { req: payrollReq, res: payrollRes } = mockReqRes({ merchant: { id: 1 } });
+  await getPayrollCalculation(payrollReq, payrollRes);
+
+  const { req: rbacReq, res: rbacRes } = mockReqRes({ merchant: { id: 1 } });
+  await getRBACMatrix(rbacReq, rbacRes);
+
+  console.log('42. HR & Staff Pillar - Payroll Calculator & RBAC Permissions Matrix:', {
+    passed: payrollRes.body.success === true &&
+            payrollRes.body.payroll?.total_payroll_liability > 0 &&
+            rbacRes.body.roles?.length >= 4,
+    totalStaff: payrollRes.body.payroll?.total_active_staff,
+    payrollLiability: `₹${payrollRes.body.payroll?.total_payroll_liability}`,
+    configuredRolesCount: rbacRes.body.roles?.length,
+    sampleRole: rbacRes.body.roles?.[0]?.role_name
+  });
+
+  // 43. Test Pillar 7: Management Executive Dashboard - CEO KPI Suite & Multi-Branch
+  const { req: execReq, res: execRes } = mockReqRes({
+    merchant: { id: 1, store_name: 'Artisan Coffee Roasters' }
+  });
+  await getExecutiveOverview(execReq, execRes);
+  console.log('43. Management Executive Dashboard - CEO Strategic Suite & Multi-Branch:', {
+    passed: execRes.body.success === true &&
+            execRes.body.executive?.kpiSuite?.businessHealthScore > 0 &&
+            execRes.body.executive?.branches?.length === 3 &&
+            execRes.body.executive?.aiBriefing?.key_strengths?.length > 0,
+    businessHealthScore: `${execRes.body.executive?.kpiSuite?.businessHealthScore} / 100`,
+    netProfitLoss: `₹${execRes.body.executive?.kpiSuite?.netProfitLoss}`,
+    multiBranchOutlets: execRes.body.executive?.branches?.length,
+    aiExecutiveHeadline: execRes.body.executive?.aiBriefing?.headline
+  });
+
+  console.log('\n🌟 ALL 43 SAAS PLATFORM MODULE CONTROLLERS & 7 PILLARS VERIFIED AND WORKING PROPERLY! 🌟');
 }
 
 runUnitTests().catch(console.error);

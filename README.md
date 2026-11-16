@@ -88,6 +88,47 @@ A production-ready Multi-Tenant Loyalty and Membership SaaS CRM platform designe
 
 ---
 
+## 🏛️ The 7 Management Pillars / Departments Architecture
+
+The DiscountMithra enterprise platform is organized into the **7 Core Management Pillars**:
+
+1. 👑 **Management Executive Dashboard (Pillar 7)**:
+   - High-level CEO / Owner Strategic KPI Suite (Health score 0-100, Net Margin, LTV, Udhaar Recovery Rate, Stock Valuation).
+   - Multi-Branch Outlets Performance (Flagship Roastery, Downtown Tech Park, Airport Express Kiosk) tracking daily targets, manager contacts, and outlet health.
+   - AI Strategic Business Assistant Briefing: Real-time strategic health diagnosis, risk alerts, and revenue growth recommendations.
+
+2. 📢 **Marketing Module (Pillar 1)**:
+   - **WhatsApp AiSensy Integration**: Automated promotional campaigns via AiSensy WhatsApp Business API with personalized tags (`{customer_name}`, `{store_name}`, `{coupon_code}`).
+   - **Digital Scratch Cards & Coupons Manager**: Interactive gamified scratch card rewards (click-to-reveal perks like "Free Cold Brew with Bagel", flat ₹ or % discounts, usage limits).
+   - **Automated Milestone Greetings Scheduler**: Birthday and anniversary automated WhatsApp wishes with auto-attached reward coupons.
+
+3. 💳 **Sales & POS Module (Pillar 2)**:
+   - High-Speed POS Billing Terminal: Phone lookup, instant VIP tier calculation, discount deduction, printable receipts.
+   - Mithra Plus VIP Pass Management: Tier pricing, active subscriber management, and pass enrollments.
+   - Daily Sales Analytics: Peak store hours distribution (9 AM - 9 PM), payment mode breakdown (UPI QR, Cash, Khata Credit), and average order value.
+
+4. ⚙️ **Operations Module (Pillar 3)**:
+   - Live Inventory & SKU Tracking: Categorized stock tracking, warehouse cost valuation, and margin calculations.
+   - Low-Stock Alerts & 1-Click Auto-PO Generator: Automatically audits breached thresholds, drafts purchase orders with optimal quantities, and creates 1-click vendor WhatsApp dispatch links.
+   - Storefront Delivery & Pickup Status Fulfillment Logs: Live status updates (Preparing, Out for Delivery, Completed).
+
+5. 🔬 **R&D Module (Pillar 4)**:
+   - Customer Feedback Logging & Net Promoter Score (NPS): Star ratings, sentiment analysis (Positive/Neutral/Negative), and category tags (Quality, Service, Ambience, Speed, Cleanliness).
+   - Feature Experimentation & A/B Testing: Hypothesis testing, Variant A vs Variant B live conversion tracking, and statistical significance analysis.
+   - Beta Testing & Bug Tracker: Pre-release capability feedback, severity classification, and resolution tracking.
+
+6. 📊 **Accounts & Finance Module (Pillar 5)**:
+   - Digital Udhaar & Customer Khata Ledgers: Real-time credit book, passbook statements, and automated AI voice agent reminders with WhatsApp UPI dispatch.
+   - Operational Expense Tracking & Real-Time P&L Income Statement: Net revenue, cost of goods, overheads, and net profit/loss.
+   - Indian Tax & GST Compliance Reports: Monthly GSTR-3B tax computations, 5%/12%/18% tax slab breakdown, CGST, SGST, and eligible Input Tax Credit (ITC).
+
+7. 👥 **HR & Staff Management Module (Pillar 6)**:
+   - Staff Attendance Tracker: Calendar matrix with daily markers (`PRESENT`, `HALF_DAY`, `ABSENT`, `LEAVE`).
+   - Automated Monthly Payroll Calculator: Base salary, pro-rated attendance deductions, performance bonuses, and net payout liability.
+   - Role-Based Access Control (RBAC): Configurable permissions matrix across all 7 Pillars for Owner/CEO, Store Manager, Cashier, and Chief Accountant.
+
+---
+
 ## 📂 Project Structure
 
 ```
@@ -98,6 +139,63 @@ merchant-loyalty-saas/
 ├── server/                    # Node.js & Express Backend
 │   ├── package.json
 │   ├── index.js               # Express entrypoint, middleware, and route mounting
+│   ├── .env.example           # Neon DB connection, JWT & Gemini API Key template
+│   ├── db/
+│   │   ├── schema.sql         # 25-table PostgreSQL DDL with indexes and constraints
+│   │   ├── index.js           # pg.Pool with Neon SSL & fallback multi-tenant engine (43 query handlers)
+│   │   ├── migrate.js         # Automated schema migration script
+│   │   └── seed.js            # Comprehensive demo merchant seed data for Neon DB
+│   ├── middleware/
+│   │   ├── auth.js            # JWT verification & tenant context injection (req.merchant)
+│   │   └── errorHandler.js    # Centralized API error handling
+│   ├── controllers/
+│   │   ├── authController.js            # Merchant register, login, store profile update
+│   │   ├── marketingPillarController.js # AiSensy WhatsApp broadcasts, scratch cards, birthday scheduler
+│   │   ├── salesPillarController.js     # Daily sales analytics, peak hours & payment mode split
+│   │   ├── operationsPillarController.js# 1-Click Auto-PO generator & inventory health summary
+│   │   ├── rdController.js              # Customer feedback, NPS, A/B experiments & beta bug tracking
+│   │   ├── financePillarController.js   # GST compliance report (GSTR-3B), output tax vs ITC
+│   │   ├── hrPillarController.js        # Pro-rated payroll calculator & RBAC permissions matrix
+│   │   ├── executiveController.js       # CEO Strategic KPI suite, multi-branch & AI briefing
+│   │   ├── customerController.js        # Storefront catalog, VIP check, order checkout & Khata integration
+│   │   ├── posController.js             # Fast phone verification & redemption execution
+│   │   ├── productsController.js        # Stock & inventory CRUD, low-stock alerts
+│   │   ├── udhaarController.js          # Digital Khata / Udhaar transactions & statements
+│   │   ├── expensesController.js        # Expense recording & real-time P&L Net Profit/Loss
+│   │   ├── staffController.js           # Staff directory, daily attendance & payroll
+│   │   ├── suppliersController.js       # Suppliers directory & Accounts Payable Khata
+│   │   ├── purchaseOrdersController.js  # PO creation, WhatsApp links & stock inwarding
+│   │   ├── aiController.js              # Smart Copilot powered by Google Gemini & Store Context
+│   │   └── voiceController.js           # AI Voice Agent, intent parsing & WhatsApp UPI dispatch
+│   ├── routes/
+│   │   ├── index.js                     # Central API router (/api)
+│   │   ├── marketingPillarRoutes.js     # /api/marketing (AiSensy, coupons, greetings)
+│   │   ├── salesPillarRoutes.js         # /api/sales (daily analytics)
+│   │   ├── operationsPillarRoutes.js    # /api/operations (auto-PO, summary)
+│   │   ├── rdRoutes.js                  # /api/rd (feedback, experiments, beta logs)
+│   │   ├── financePillarRoutes.js       # /api/finance (tax report)
+│   │   ├── hrPillarRoutes.js            # /api/hr (payroll, rbac)
+│   │   ├── executiveRoutes.js           # /api/executive (overview)
+│   │   └── customerRoutes.js            # /api/customer (storefront)
+│   └── test-unit.js                     # Automated 43-point controller verification test suite
+│
+└── client/                              # React & Tailwind CSS Frontend
+    ├── src/
+    │   ├── api/
+    │   │   └── client.js                # Universal API client with methods for all 7 Pillars
+    │   ├── components/
+    │   │   ├── Sidebar.jsx              # Responsive 7 Management Pillars navigation & RBAC role switcher
+    │   │   ├── Navbar.jsx               # Top navigation bar
+    │   │   └── AICopilotDrawer.jsx      # Global floating AI Copilot chat drawer
+    │   └── pages/
+    │       ├── ExecutiveDashboard.jsx   # Pillar 7: CEO Cockpit, Multi-Branch & AI Briefing
+    │       ├── MarketingPillar.jsx      # Pillar 1: AiSensy WhatsApp, Scratch Cards & Greetings
+    │       ├── SalesPillar.jsx          # Pillar 2: POS Billing Terminal, VIP Passes & Daily Analytics
+    │       ├── OperationsPillar.jsx     # Pillar 3: Inventory SKUs, 1-Click Auto-PO & Deliveries
+    │       ├── RAndDPillar.jsx          # Pillar 4: NPS Feedback, A/B Testing & Beta Bug Tracker
+    │       ├── FinancePillar.jsx        # Pillar 5: Digital Khata, Expenses & Indian GST Reports
+    │       ├── HRPillar.jsx             # Pillar 6: Staff Attendance, Payroll & RBAC Matrix
+    │       └── CustomerStorefront.jsx   # Customer Omnichannel Digital Storefront (Mobile & Desktop)
 │   ├── .env.example           # Neon DB connection, JWT & Gemini API Key template
 │   ├── db/
 │   │   ├── schema.sql         # PostgreSQL DDL with indexes and constraints

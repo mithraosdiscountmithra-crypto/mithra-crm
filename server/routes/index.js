@@ -15,6 +15,13 @@ import purchaseOrdersRoutes from './purchaseOrdersRoutes.js';
 import aiRoutes from './aiRoutes.js';
 import voiceRoutes from './voiceRoutes.js';
 import customerRoutes from './customerRoutes.js';
+import marketingPillarRoutes from './marketingPillarRoutes.js';
+import salesPillarRoutes from './salesPillarRoutes.js';
+import operationsPillarRoutes from './operationsPillarRoutes.js';
+import rdRoutes from './rdRoutes.js';
+import financePillarRoutes from './financePillarRoutes.js';
+import hrPillarRoutes from './hrPillarRoutes.js';
+import executiveRoutes from './executiveRoutes.js';
 
 const router = Router();
 
@@ -34,6 +41,15 @@ router.use('/purchase-orders', purchaseOrdersRoutes);
 router.use('/ai', aiRoutes);
 router.use('/voice', voiceRoutes);
 router.use('/customer', customerRoutes);
+
+// 7 Management Pillars / Departments
+router.use('/marketing', marketingPillarRoutes);
+router.use('/sales', salesPillarRoutes);
+router.use('/operations', operationsPillarRoutes);
+router.use('/rd', rdRoutes);
+router.use('/finance', financePillarRoutes);
+router.use('/hr', hrPillarRoutes);
+router.use('/executive', executiveRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {

@@ -3,7 +3,18 @@ import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import AICopilotDrawer from './components/AICopilotDrawer';
-import Dashboard from './pages/Dashboard';
+
+// 7 Management Pillars Components
+import ExecutiveDashboard from './pages/ExecutiveDashboard';
+import MarketingPillar from './pages/MarketingPillar';
+import SalesPillar from './pages/SalesPillar';
+import OperationsPillar from './pages/OperationsPillar';
+import RAndDPillar from './pages/RAndDPillar';
+import FinancePillar from './pages/FinancePillar';
+import HRPillar from './pages/HRPillar';
+
+// Omnichannel Storefront & Auxiliary Views
+import CustomerStorefront from './pages/CustomerStorefront';
 import POSCheckout from './pages/POSCheckout';
 import Customers from './pages/Customers';
 import MembershipPlans from './pages/MembershipPlans';
@@ -13,7 +24,6 @@ import Expenses from './pages/Expenses';
 import StaffPayroll from './pages/StaffPayroll';
 import WhatsAppMarketing from './pages/WhatsAppMarketing';
 import SuppliersAndPOs from './pages/SuppliersAndPOs';
-import CustomerStorefront from './pages/CustomerStorefront';
 import RedemptionsList from './pages/RedemptionsList';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
@@ -21,14 +31,15 @@ import Register from './pages/Register';
 
 export default function App() {
   const { merchant, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('executive'); // Default to Pillar 7 (Executive Suite)
+  const [currentRole, setCurrentRole] = useState('Owner / CEO'); // RBAC Role Switcher
   const [authView, setAuthView] = useState('login'); // 'login' or 'register'
 
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-300">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
-        <div className="text-sm font-semibold tracking-wide">Initializing Merchant SaaS Platform...</div>
+        <div className="text-sm font-semibold tracking-wide">Initializing DiscountMithra ERP SaaS Platform...</div>
       </div>
     );
   }
@@ -61,11 +72,39 @@ export default function App() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Navigation Sidebar */}
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          currentRole={currentRole}
+          setCurrentRole={setCurrentRole}
+        />
 
-        {/* Dynamic Main Workspace */}
+        {/* Dynamic Main Workspace: 7 Management Pillars + Omnichannel Views */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
+          {/* Pillar 7: Executive Dashboard (CEO Cockpit & Multi-Branch) */}
+          {(activeTab === 'executive' || activeTab === 'dashboard') && (
+            <ExecutiveDashboard setActiveTab={setActiveTab} />
+          )}
+
+          {/* Pillar 1: Marketing (AiSensy, Scratch Cards & Greetings) */}
+          {activeTab === 'marketing' && <MarketingPillar />}
+
+          {/* Pillar 2: Sales (POS Billing, VIP Passes & Daily Analytics) */}
+          {activeTab === 'sales' && <SalesPillar />}
+
+          {/* Pillar 3: Operations (Inventory, Low-Stock & Auto-PO) */}
+          {activeTab === 'operations' && <OperationsPillar />}
+
+          {/* Pillar 4: R&D (Customer Feedback, NPS & A/B Tests) */}
+          {activeTab === 'rd' && <RAndDPillar />}
+
+          {/* Pillar 5: Accounts & Finance (Digital Khata, Expenses & GST Tax) */}
+          {activeTab === 'finance' && <FinancePillar />}
+
+          {/* Pillar 6: HR & Staff (Attendance, Payroll & RBAC) */}
+          {activeTab === 'hr' && <HRPillar />}
+
+          {/* Channels & Direct Views */}
           {activeTab === 'storefront' && <CustomerStorefront />}
           {activeTab === 'pos' && <POSCheckout />}
           {activeTab === 'udhaar' && <DigitalKhata />}
@@ -81,15 +120,63 @@ export default function App() {
         </main>
       </div>
 
-      {/* Bottom mobile navigation */}
+      {/* Bottom mobile navigation for 7 Management Pillars */}
       <div className="md:hidden sticky bottom-0 z-40 bg-slate-950/95 border-t border-slate-800 p-2 flex overflow-x-auto gap-2 no-scrollbar">
         <button
-          onClick={() => setActiveTab('dashboard')}
+          onClick={() => setActiveTab('executive')}
           className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
-            activeTab === 'dashboard' ? 'bg-indigo-600 text-white' : 'text-slate-400'
+            activeTab === 'executive' || activeTab === 'dashboard' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-400'
           }`}
         >
-          Dashboard
+          👑 Executive
+        </button>
+        <button
+          onClick={() => setActiveTab('marketing')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
+            activeTab === 'marketing' ? 'bg-emerald-600 text-white' : 'text-slate-400'
+          }`}
+        >
+          📢 Marketing
+        </button>
+        <button
+          onClick={() => setActiveTab('sales')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
+            activeTab === 'sales' ? 'bg-indigo-600 text-white' : 'text-slate-400'
+          }`}
+        >
+          💳 Sales & POS
+        </button>
+        <button
+          onClick={() => setActiveTab('operations')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
+            activeTab === 'operations' ? 'bg-sky-600 text-white' : 'text-slate-400'
+          }`}
+        >
+          ⚙️ Operations
+        </button>
+        <button
+          onClick={() => setActiveTab('rd')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
+            activeTab === 'rd' ? 'bg-amber-600 text-white' : 'text-slate-400'
+          }`}
+        >
+          🔬 R&D
+        </button>
+        <button
+          onClick={() => setActiveTab('finance')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
+            activeTab === 'finance' ? 'bg-rose-600 text-white' : 'text-slate-400'
+          }`}
+        >
+          📊 Finance
+        </button>
+        <button
+          onClick={() => setActiveTab('hr')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
+            activeTab === 'hr' ? 'bg-teal-600 text-white' : 'text-slate-400'
+          }`}
+        >
+          👥 HR & Team
         </button>
         <button
           onClick={() => setActiveTab('storefront')}
@@ -97,79 +184,7 @@ export default function App() {
             activeTab === 'storefront' ? 'bg-emerald-600 text-white' : 'text-slate-400'
           }`}
         >
-          Storefront
-        </button>
-        <button
-          onClick={() => setActiveTab('pos')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
-            activeTab === 'pos' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400'
-          }`}
-        >
-          POS
-        </button>
-        <button
-          onClick={() => setActiveTab('suppliers')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
-            activeTab === 'suppliers' ? 'bg-sky-600 text-white' : 'text-slate-400'
-          }`}
-        >
-          Suppliers
-        </button>
-        <button
-          onClick={() => setActiveTab('udhaar')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
-            activeTab === 'udhaar' ? 'bg-rose-500 text-white' : 'text-slate-400'
-          }`}
-        >
-          Khata
-        </button>
-        <button
-          onClick={() => setActiveTab('expenses')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
-            activeTab === 'expenses' ? 'bg-pink-600 text-white' : 'text-slate-400'
-          }`}
-        >
-          Expenses
-        </button>
-        <button
-          onClick={() => setActiveTab('staff')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
-            activeTab === 'staff' ? 'bg-teal-600 text-white' : 'text-slate-400'
-          }`}
-        >
-          Staff
-        </button>
-        <button
-          onClick={() => setActiveTab('whatsapp')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
-            activeTab === 'whatsapp' ? 'bg-emerald-600 text-white' : 'text-slate-400'
-          }`}
-        >
-          WhatsApp
-        </button>
-        <button
-          onClick={() => setActiveTab('inventory')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
-            activeTab === 'inventory' ? 'bg-indigo-600 text-white' : 'text-slate-400'
-          }`}
-        >
-          Inventory
-        </button>
-        <button
-          onClick={() => setActiveTab('customers')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
-            activeTab === 'customers' ? 'bg-indigo-600 text-white' : 'text-slate-400'
-          }`}
-        >
-          Customers
-        </button>
-        <button
-          onClick={() => setActiveTab('plans')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
-            activeTab === 'plans' ? 'bg-indigo-600 text-white' : 'text-slate-400'
-          }`}
-        >
-          Plans
+          🏪 Storefront
         </button>
       </div>
 

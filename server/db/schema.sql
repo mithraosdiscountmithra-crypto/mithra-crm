@@ -297,3 +297,129 @@ CREATE INDEX IF NOT EXISTS idx_customer_orders_phone ON customer_orders(merchant
 CREATE INDEX IF NOT EXISTS idx_customer_orders_status ON customer_orders(merchant_id, status);
 CREATE INDEX IF NOT EXISTS idx_customer_orders_created ON customer_orders(merchant_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_customer_order_items_order ON customer_order_items(order_id);
+
+-- 19. Coupons & Digital Scratch Cards (Marketing Pillar)
+CREATE TABLE IF NOT EXISTS coupons (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+    code VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    discount_type VARCHAR(20) DEFAULT 'PERCENT' CHECK (discount_type IN ('PERCENT', 'FLAT')),
+    discount_value NUMERIC(10, 2) NOT NULL DEFAULT 10.00,
+    min_spend NUMERIC(10, 2) DEFAULT 0.00,
+    max_discount NUMERIC(10, 2),
+    is_scratch_card BOOLEAN DEFAULT FALSE,
+    revealed_perk VARCHAR(255),
+    expiry_date DATE,
+    usage_limit INTEGER DEFAULT 100,
+    used_count INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_merchant_coupon_code UNIQUE (merchant_id, code)
+);
+
+-- 20. Customer Greetings (Birthday / Anniversary Automated Scheduler)
+CREATE TABLE IF NOT EXISTS customer_greetings (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    greeting_type VARCHAR(20) NOT NULL CHECK (greeting_type IN ('BIRTHDAY', 'ANNIVERSARY', 'FESTIVAL')),
+    event_date DATE NOT NULL,
+    scheduled_date DATE NOT NULL,
+    channel VARCHAR(20) DEFAULT 'WHATSAPP' CHECK (channel IN ('WHATSAPP', 'SMS')),
+    message TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'SCHEDULED' CHECK (status IN ('SCHEDULED', 'SENT', 'FAILED')),
+    coupon_code VARCHAR(50),
+    sent_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 21. Customer Feedback & NPS Logging (R&D Pillar)
+CREATE TABLE IF NOT EXISTS customer_feedback (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+    customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+    customer_name VARCHAR(255) NOT NULL,
+    customer_phone VARCHAR(50),
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    sentiment VARCHAR(20) DEFAULT 'POSITIVE' CHECK (sentiment IN ('POSITIVE', 'NEUTRAL', 'NEGATIVE')),
+    category VARCHAR(100) DEFAULT 'Quality' CHECK (category IN ('Quality', 'Service', 'Ambience', 'Pricing', 'Speed', 'Cleanliness')),
+    feedback_text TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'NEW' CHECK (status IN ('NEW', 'ACKNOWLEDGED', 'RESOLVED')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 22. Feature Experimentation & A/B Testing (R&D Pillar)
+CREATE TABLE IF NOT EXISTS experiments (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+    test_name VARCHAR(255) NOT NULL,
+    hypothesis TEXT NOT NULL,
+    target_segment VARCHAR(100) DEFAULT 'ALL' CHECK (target_segment IN ('ALL', 'VIP', 'NEW_CUSTOMERS', 'UDHAAR_USERS')),
+    variant_a VARCHAR(255) NOT NULL,
+    variant_b VARCHAR(255) NOT NULL,
+    conversion_metric VARCHAR(100) NOT NULL,
+    status VARCHAR(20) DEFAULT 'RUNNING' CHECK (status IN ('DRAFT', 'RUNNING', 'CONCLUDED')),
+    sample_size INTEGER DEFAULT 0,
+    conversion_rate_a NUMERIC(5, 2) DEFAULT 0.00,
+    conversion_rate_b NUMERIC(5, 2) DEFAULT 0.00,
+    results_summary TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 23. Beta Testing Logs & Bug Tracker (R&D Pillar)
+CREATE TABLE IF NOT EXISTS beta_testing_logs (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+    feature_name VARCHAR(255) NOT NULL,
+    tester_name VARCHAR(255) NOT NULL,
+    tester_phone VARCHAR(50),
+    feedback_type VARCHAR(50) DEFAULT 'BUG' CHECK (feedback_type IN ('BUG', 'FEATURE_REQUEST', 'UX_FEEDBACK')),
+    severity VARCHAR(20) DEFAULT 'MEDIUM' CHECK (severity IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
+    description TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'INVESTIGATING', 'RESOLVED')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 24. Multi-Branch Outlets (Executive Pillar)
+CREATE TABLE IF NOT EXISTS branches (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+    branch_name VARCHAR(255) NOT NULL,
+    branch_code VARCHAR(50) NOT NULL,
+    address TEXT NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    phone VARCHAR(50),
+    manager_name VARCHAR(255),
+    daily_target NUMERIC(10, 2) DEFAULT 25000.00,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_merchant_branch_code UNIQUE (merchant_id, branch_code)
+);
+
+-- 25. Role-Based Access Control (RBAC HR Pillar)
+CREATE TABLE IF NOT EXISTS roles_permissions (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+    role_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    can_executive BOOLEAN DEFAULT FALSE,
+    can_marketing BOOLEAN DEFAULT FALSE,
+    can_pos BOOLEAN DEFAULT TRUE,
+    can_operations BOOLEAN DEFAULT FALSE,
+    can_rd BOOLEAN DEFAULT FALSE,
+    can_finance BOOLEAN DEFAULT FALSE,
+    can_hr BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_merchant_role_name UNIQUE (merchant_id, role_name)
+);
+
+-- Indexes for the 7 Pillar tables
+CREATE INDEX IF NOT EXISTS idx_coupons_merchant ON coupons(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(merchant_id, code);
+CREATE INDEX IF NOT EXISTS idx_customer_greetings_merchant ON customer_greetings(merchant_id, scheduled_date);
+CREATE INDEX IF NOT EXISTS idx_customer_feedback_merchant ON customer_feedback(merchant_id, rating);
+CREATE INDEX IF NOT EXISTS idx_experiments_merchant ON experiments(merchant_id, status);
+CREATE INDEX IF NOT EXISTS idx_beta_testing_logs_merchant ON beta_testing_logs(merchant_id, status);
+CREATE INDEX IF NOT EXISTS idx_branches_merchant ON branches(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_roles_permissions_merchant ON roles_permissions(merchant_id);

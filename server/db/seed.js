@@ -274,6 +274,60 @@ async function seedData() {
         ($1, 5, 'Double-Walled Glass Tumbler 16oz', 1, 35.00, 35.00)
     `, [ord2.rows[0].id]);
 
+    // 17. Seed Coupons & Scratch Cards (Marketing Pillar)
+    await client.query(`
+      INSERT INTO coupons (merchant_id, code, title, discount_type, discount_value, min_spend, is_scratch_card, revealed_perk, expiry_date, usage_limit, used_count)
+      VALUES 
+        ($1, 'FESTIVE50', 'Festive Weekend Flat ₹50 OFF', 'FLAT', 50.00, 300.00, false, NULL, '2026-12-31', 100, 14),
+        ($1, 'MITHRAGIFT25', 'VIP Scratch Card Special', 'PERCENT', 25.00, 200.00, true, 'Free Cold Brew with any Bagel', '2026-11-30', 50, 8),
+        ($1, 'BIRTHDAY100', 'Birthday Celebration Gift Card', 'FLAT', 100.00, 250.00, true, 'Complimentary Artisanal Dessert Slice', '2026-12-31', 50, 5)
+      ON CONFLICT (merchant_id, code) DO NOTHING;
+    `, [merchantId]);
+
+    // 18. Seed Automated Greetings (Marketing Pillar)
+    await client.query(`
+      INSERT INTO customer_greetings (merchant_id, customer_id, greeting_type, event_date, scheduled_date, channel, message, status, coupon_code)
+      VALUES 
+        ($1, $2, 'BIRTHDAY', '2026-11-18', '2026-11-18', 'WHATSAPP', '🎂 Happy Birthday Alex Rivera! Enjoy ₹100 off your coffee order with code BIRTHDAY100 at Artisan Coffee Roasters.', 'SCHEDULED', 'BIRTHDAY100'),
+        ($1, $3, 'ANNIVERSARY', '2026-11-20', '2026-11-20', 'WHATSAPP', '💍 Happy Anniversary Emily Watson! Thank you for being our valued patron. Enjoy 25% off with code MITHRAGIFT25.', 'SCHEDULED', 'MITHRAGIFT25')
+    `, [merchantId, cust1.rows[0].id, cust2.rows[0].id]);
+
+    // 19. Seed Customer Feedback (R&D Pillar)
+    await client.query(`
+      INSERT INTO customer_feedback (merchant_id, customer_id, customer_name, customer_phone, rating, sentiment, category, feedback_text, status)
+      VALUES 
+        ($1, $2, 'Alex Rivera', '5551234567', 5, 'POSITIVE', 'Quality', 'The Ethiopian Yirgacheffe roast is genuinely the best single origin in town. Incredible citrus notes!', 'ACKNOWLEDGED'),
+        ($1, $3, 'Emily Watson', '5552345678', 4, 'POSITIVE', 'Ambience', 'Lovely cafe vibes and fast WiFi, perfect for remote working. A bit crowded during lunchtime though.', 'NEW')
+    `, [merchantId, cust1.rows[0].id, cust2.rows[0].id]);
+
+    // 20. Seed Experiments (R&D Pillar)
+    await client.query(`
+      INSERT INTO experiments (merchant_id, test_name, hypothesis, target_segment, variant_a, variant_b, conversion_metric, status, sample_size, conversion_rate_a, conversion_rate_b, results_summary)
+      VALUES 
+        ($1, 'VIP Tier Free Doorstep Delivery vs Flat ₹50 Coupon', 'Offering free doorstep delivery to VIP members will increase repeat orders by 25% compared to ₹50 coupon.', 'VIP', 'Free Delivery on All Orders', 'Flat ₹50 Coupon on ₹300+', '7-Day Repeat Order Rate', 'RUNNING', 140, 32.50, 24.00, 'Variant A (Free Delivery) is outperforming by +8.5% conversion uplift.')
+    `, [merchantId]);
+
+    // 21. Seed Branches (Executive Pillar)
+    await client.query(`
+      INSERT INTO branches (merchant_id, branch_name, branch_code, address, city, phone, manager_name, daily_target)
+      VALUES 
+        ($1, 'Artisan Coffee - Flagship Roastery', 'BR-MAIN-01', '100 Specialty Way, Indiranagar', 'Bengaluru', '+91-80-2345-0001', 'Sarah Jenkins', 35000.00),
+        ($1, 'Artisan Coffee - Downtown Tech Park', 'BR-DOWN-02', 'Tech Hub, 3rd Floor, Outer Ring Rd', 'Bengaluru', '+91-80-2345-0002', 'Vikram Rathore', 28000.00),
+        ($1, 'Artisan Coffee - Airport Express Kiosk', 'BR-AIR-03', 'Terminal 2 Departures, Kempegowda Intl', 'Bengaluru', '+91-80-2345-0003', 'Anita Desai', 45000.00)
+      ON CONFLICT (merchant_id, branch_code) DO NOTHING;
+    `, [merchantId]);
+
+    // 22. Seed RBAC Roles (HR Pillar)
+    await client.query(`
+      INSERT INTO roles_permissions (merchant_id, role_name, description, can_executive, can_marketing, can_pos, can_operations, can_rd, can_finance, can_hr)
+      VALUES 
+        ($1, 'Owner / CEO', 'Full unrestricted administrative access to all 7 Pillars & Executive Suite', true, true, true, true, true, true, true),
+        ($1, 'Store Manager', 'Operations, POS terminal, staff attendance, customer relations and marketing campaigns', false, true, true, true, true, false, true),
+        ($1, 'Cashier / Front Desk', 'Fast POS checkout billing, member lookup, voucher redemption, customer feedback', false, false, true, false, true, false, false),
+        ($1, 'Chief Accountant', 'Digital Khata ledger, supplier payments, expenses, P&L reports, and GST compliance', false, false, false, true, false, true, true)
+      ON CONFLICT (merchant_id, role_name) DO NOTHING;
+    `, [merchantId]);
+
     console.log('[Seed] Demo data seeded successfully into PostgreSQL!');
   } catch (err) {
     console.error('[Seed Error]:', err.message);
