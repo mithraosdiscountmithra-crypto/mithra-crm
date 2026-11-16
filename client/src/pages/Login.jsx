@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, LogIn, Sparkles, Store, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, LogIn, Sparkles, Store, ShieldCheck, Volume2 } from 'lucide-react';
+import { playOrderChime } from '../utils/sound';
 
 export default function Login({ onSwitchToRegister }) {
   const { login } = useAuth();
@@ -69,6 +70,16 @@ export default function Login({ onSwitchToRegister }) {
               {error}
             </div>
           )}
+
+          {/* Test Order Sound Button */}
+          <button
+            type="button"
+            onClick={playOrderChime}
+            className="w-full py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-300 text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95 shadow-sm"
+          >
+            <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+            <span>🔔 Test Order Chime Sound (Click to Hear)</span>
+          </button>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
