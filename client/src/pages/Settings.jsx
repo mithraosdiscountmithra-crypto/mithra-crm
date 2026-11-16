@@ -1,7 +1,25 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
-import { Store, User, Phone, MapPin, Tag, Database, CheckCircle, AlertCircle, Save, Camera, Image } from 'lucide-react';
+import { uploadToCloudinary } from '../utils/cloudinary';
+import { 
+  Store, 
+  User, 
+  Phone, 
+  MapPin, 
+  Tag, 
+  Database, 
+  CheckCircle, 
+  AlertCircle, 
+  Save, 
+  Camera, 
+  Image, 
+  Upload, 
+  Cloud, 
+  Loader2, 
+  Sparkles,
+  ExternalLink 
+} from 'lucide-react';
 
 export default function Settings() {
   const { merchant, updateMerchant } = useAuth();
@@ -15,9 +33,86 @@ export default function Settings() {
   const [bannerUrl, setBannerUrl] = useState(merchant?.banner_url || '');
   const [photoUrl, setPhotoUrl] = useState(merchant?.photo_url || '');
 
+  // File Upload states for Banner & Logo
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  // Cloudinary Settings State (Persisted to localStorage)
+  const [cloudName, setCloudName] = useState(localStorage.getItem('cloudinary_cloud_name') || '');
+  const [uploadPreset, setUploadPreset] = useState(localStorage.getItem('cloudinary_upload_preset') || '');
+  const [cloudinarySaved, setCloudinarySaved] = useState(false);
+  const [testingUpload, setTestingUpload] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+
+  const handleBannerUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingBanner(true);
+      const res = await uploadToCloudinary(file);
+      if (res.success && res.url) {
+        setBannerUrl(res.url);
+      } else {
+        setError(res.error || 'Failed to upload banner');
+      }
+    } catch (err) {
+      setError(err.message || 'Error uploading banner');
+    } finally {
+      setUploadingBanner(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingLogo(true);
+      const res = await uploadToCloudinary(file);
+      if (res.success && res.url) {
+        setPhotoUrl(res.url);
+      } else {
+        setError(res.error || 'Failed to upload logo');
+      }
+    } catch (err) {
+      setError(err.message || 'Error uploading logo');
+    } finally {
+      setUploadingLogo(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleSaveCloudinary = (e) => {
+    e.preventDefault();
+    localStorage.setItem('cloudinary_cloud_name', cloudName.trim());
+    localStorage.setItem('cloudinary_upload_preset', uploadPreset.trim());
+    setCloudinarySaved(true);
+    setTimeout(() => setCloudinarySaved(false), 4000);
+  };
+
+  const handleTestUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setTestingUpload(true);
+      setTestResult(null);
+      const res = await uploadToCloudinary(file);
+      if (res.success) {
+        setTestResult({ success: true, url: res.url });
+      } else {
+        setTestResult({ success: false, error: res.error });
+      }
+    } catch (err) {
+      setTestResult({ success: false, error: err.message });
+    } finally {
+      setTestingUpload(false);
+      e.target.value = '';
+    }
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -181,7 +276,29 @@ export default function Settings() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">Shop Banner URL</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-300">Shop Banner URL</label>
+                <label className="cursor-pointer text-[11px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                  {uploadingBanner ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3 h-3" />
+                      <span>Upload Banner File</span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleBannerUpload}
+                    disabled={uploadingBanner}
+                  />
+                </label>
+              </div>
               <input
                 type="url"
                 value={bannerUrl}
@@ -223,7 +340,29 @@ export default function Settings() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">Shop Logo / Facade Photo URL</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-300">Shop Logo / Facade Photo URL</label>
+                <label className="cursor-pointer text-[11px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                  {uploadingLogo ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3 h-3" />
+                      <span>Upload Logo File</span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleLogoUpload}
+                    disabled={uploadingLogo}
+                  />
+                </label>
+              </div>
               <input
                 type="url"
                 value={photoUrl}
@@ -270,6 +409,140 @@ export default function Settings() {
           </button>
         </div>
       </form>
+
+      {/* Cloudinary Image & Media Cloud Storage Settings */}
+      <div className="p-6 rounded-3xl border border-indigo-500/30 bg-slate-900/80 space-y-5 shadow-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+              <Cloud className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <span>Cloudinary Cloud Image Storage</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  CDN & Fast Delivery
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Direct uploads from phone gallery or PC are hosted on Cloudinary and linked in PostgreSQL Neon DB.
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://cloudinary.com/users/register_free"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-bold underline"
+          >
+            <span>Free 25GB Account</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
+
+        {cloudinarySaved && (
+          <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2 animate-in fade-in">
+            <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>✅ Cloudinary credentials saved in browser storage successfully!</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveCloudinary} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">
+                Cloudinary Cloud Name
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. mithracrm or your_cloud_name"
+                value={cloudName}
+                onChange={(e) => setCloudName(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono placeholder-slate-500 focus:outline-none focus:border-indigo-400"
+              />
+              <span className="text-[10px] text-slate-500 mt-1 block">
+                Found on your Cloudinary Dashboard under "Cloud name".
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">
+                Upload Preset (Unsigned)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. mithra_unsigned or your_preset"
+                value={uploadPreset}
+                onChange={(e) => setUploadPreset(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono placeholder-slate-500 focus:outline-none focus:border-indigo-400"
+              />
+              <span className="text-[10px] text-slate-500 mt-1 block">
+                Cloudinary Settings → Upload → Add Upload Preset (Signing Mode: Unsigned).
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <div className="flex items-center gap-2">
+              <label className="cursor-pointer px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 flex items-center gap-2 transition">
+                {testingUpload ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                    <span>Testing Upload...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Test Upload from Device</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleTestUpload}
+                  disabled={testingUpload}
+                />
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition"
+            >
+              Save Cloudinary Configuration
+            </button>
+          </div>
+        </form>
+
+        {testResult && (
+          <div className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+            testResult.success
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+              : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
+          }`}>
+            <div className="flex items-center gap-2.5">
+              {testResult.success ? (
+                <>
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div className="overflow-hidden">
+                    <p className="font-bold">Image Upload Succeeded!</p>
+                    <p className="text-[10px] text-emerald-400/80 truncate max-w-sm">{testResult.url}</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>Upload failed: {testResult.error}</span>
+                </>
+              )}
+            </div>
+            {testResult.url && (
+              <img src={testResult.url} alt="Test" className="w-8 h-8 rounded-lg object-cover border border-emerald-500/40" />
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Database & Multi-Tenant Info */}
       <div className="p-6 rounded-3xl border border-slate-800 bg-slate-900/60 space-y-4">

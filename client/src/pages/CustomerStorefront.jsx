@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { playOrderChime } from '../utils/sound';
+import { uploadToCloudinary } from '../utils/cloudinary';
 import { 
   Store, 
   ShoppingBag, 
@@ -38,7 +39,9 @@ import {
   UtensilsCrossed,
   Banknote,
   PlusCircle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Upload,
+  Loader2
 } from 'lucide-react';
 
 export default function CustomerStorefront({ initialSubView = 'store' }) {
@@ -106,6 +109,68 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
     photo_url: ''
   });
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
+
+  // Image Uploading States (Cloudinary / Direct Gallery Upload)
+  const [isUploadingDishPhoto, setIsUploadingDishPhoto] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+
+  const handleDishPhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingDishPhoto(true);
+      const res = await uploadToCloudinary(file);
+      if (res.success && res.url) {
+        setMenuForm(prev => ({ ...prev, image_url: res.url }));
+      } else {
+        alert(res.error || 'Failed to upload image. Please try again.');
+      }
+    } catch (err) {
+      alert(err.message || 'Error processing image file.');
+    } finally {
+      setIsUploadingDishPhoto(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleBannerUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingBanner(true);
+      const res = await uploadToCloudinary(file);
+      if (res.success && res.url) {
+        setPhotoForm(prev => ({ ...prev, banner_url: res.url }));
+      } else {
+        alert(res.error || 'Failed to upload banner. Please try again.');
+      }
+    } catch (err) {
+      alert(err.message || 'Error processing banner file.');
+    } finally {
+      setIsUploadingBanner(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingLogo(true);
+      const res = await uploadToCloudinary(file);
+      if (res.success && res.url) {
+        setPhotoForm(prev => ({ ...prev, photo_url: res.url }));
+      } else {
+        alert(res.error || 'Failed to upload logo. Please try again.');
+      }
+    } catch (err) {
+      alert(err.message || 'Error processing logo file.');
+    } finally {
+      setIsUploadingLogo(false);
+      e.target.value = '';
+    }
+  };
 
   // Merchant Orders Management State
   const [merchantOrders, setMerchantOrders] = useState([]);
@@ -1804,36 +1869,68 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
               </div>
 
               {/* Optional Dish Photo Section */}
-              <div className="space-y-2 pt-2 border-t border-slate-800">
+              <div className="space-y-2.5 pt-2 border-t border-slate-800">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                    <Camera className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Dish Photo (Optional)</span>
-                    <span className="text-[10px] text-slate-500 font-normal">ఐచ్చికం - కావాలంటే యాడ్ చేయవచ్చు</span>
-                  </label>
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Dish Photo</span>
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold">
+                        Optional (ఐచ్చికం)
+                      </span>
+                    </label>
+                    <p className="text-[10px] text-slate-400 mt-0.5">ఫోటో ఉంటే యాడ్ చేయండి, లేదా ఖాళీగా ఉంచవచ్చు</p>
+                  </div>
                   {menuForm.image_url && (
                     <button
                       type="button"
                       onClick={() => setMenuForm(prev => ({ ...prev, image_url: '' }))}
-                      className="text-[10px] text-rose-400 hover:text-rose-300 underline"
+                      className="text-[10px] text-rose-400 hover:text-rose-300 underline font-semibold"
                     >
-                      Clear Photo
+                      Remove Photo
                     </button>
                   )}
                 </div>
 
-                <input
-                  type="url"
-                  placeholder="Paste dish photo URL (e.g. https://images.unsplash.com/...)"
-                  value={menuForm.image_url || ''}
-                  onChange={(e) => setMenuForm(prev => ({ ...prev, image_url: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
-                />
+                {/* Direct Phone / Gallery File Upload via Cloudinary */}
+                <div className="flex items-center gap-2">
+                  <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold transition shadow-sm">
+                    {isUploadingDishPhoto ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                        <span>Uploading Photo to Cloud...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>📤 Upload from Phone Gallery / Camera</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleDishPhotoUpload}
+                      disabled={isUploadingDishPhoto}
+                    />
+                  </label>
+                </div>
+
+                <div className="relative">
+                  <span className="text-[10px] text-slate-500 block mb-1">...or paste direct image URL:</span>
+                  <input
+                    type="url"
+                    placeholder="https://images.unsplash.com/photo-..."
+                    value={menuForm.image_url || ''}
+                    onChange={(e) => setMenuForm(prev => ({ ...prev, image_url: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
 
                 {/* 1-Click Dish Photo Presets */}
                 <div className="space-y-1.5">
                   <span className="text-[10px] text-slate-400 font-semibold block">
-                    📸 1-Click Food Photo Presets:
+                    📸 ...or choose 1-Click Food Presets:
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {[
@@ -1968,8 +2065,30 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
             </div>
 
             <form onSubmit={handleSaveShopPhoto} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1">Storefront Banner URL</label>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-300">Storefront Banner</label>
+                  <label className="cursor-pointer text-[11px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                    {isUploadingBanner ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3 h-3" />
+                        <span>Upload File</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleBannerUpload}
+                      disabled={isUploadingBanner}
+                    />
+                  </label>
+                </div>
                 <input
                   type="url"
                   placeholder="https://images.unsplash.com/..."
@@ -1979,8 +2098,30 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1">Shop Logo / Facade Photo URL</label>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-300">Shop Logo / Facade Photo</label>
+                  <label className="cursor-pointer text-[11px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                    {isUploadingLogo ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3 h-3" />
+                        <span>Upload File</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleLogoUpload}
+                      disabled={isUploadingLogo}
+                    />
+                  </label>
+                </div>
                 <input
                   type="url"
                   placeholder="https://images.unsplash.com/..."
