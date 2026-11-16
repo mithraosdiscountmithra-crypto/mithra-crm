@@ -108,7 +108,8 @@ export const createProduct = async (req, res) => {
       selling_price,
       stock_quantity,
       low_stock_threshold,
-      unit
+      unit,
+      image_url
     } = req.body;
 
     if (!product_name) {
@@ -119,24 +120,51 @@ export const createProduct = async (req, res) => {
     }
 
     const cleanSku = sku ? sku.trim() : `SKU-${Date.now().toString().slice(-6)}`;
+    const cleanImageUrl = image_url && typeof image_url === 'string' && image_url.trim() ? image_url.trim() : null;
 
-    const result = await db.query(
-      `INSERT INTO products 
-       (merchant_id, product_name, sku, category, purchase_price, selling_price, stock_quantity, low_stock_threshold, unit)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
-      [
-        merchantId,
-        product_name.trim(),
-        cleanSku,
-        category ? category.trim() : 'General',
-        parseFloat(purchase_price) || 0.00,
-        parseFloat(selling_price) || 0.00,
-        parseInt(stock_quantity, 10) || 0,
-        parseInt(low_stock_threshold, 10) || 5,
-        unit ? unit.trim() : 'pcs'
-      ]
-    );
+    let result;
+    try {
+      result = await db.query(
+        `INSERT INTO products 
+         (merchant_id, product_name, sku, category, purchase_price, selling_price, stock_quantity, low_stock_threshold, unit, image_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         RETURNING *`,
+        [
+          merchantId,
+          product_name.trim(),
+          cleanSku,
+          category ? category.trim() : 'General',
+          parseFloat(purchase_price) || 0.00,
+          parseFloat(selling_price) || 0.00,
+          parseInt(stock_quantity, 10) || 0,
+          parseInt(low_stock_threshold, 10) || 5,
+          unit ? unit.trim() : 'pcs',
+          cleanImageUrl
+        ]
+      );
+    } catch (dbErr) {
+      // Fallback if image_url column not yet present
+      result = await db.query(
+        `INSERT INTO products 
+         (merchant_id, product_name, sku, category, purchase_price, selling_price, stock_quantity, low_stock_threshold, unit)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         RETURNING *`,
+        [
+          merchantId,
+          product_name.trim(),
+          cleanSku,
+          category ? category.trim() : 'General',
+          parseFloat(purchase_price) || 0.00,
+          parseFloat(selling_price) || 0.00,
+          parseInt(stock_quantity, 10) || 0,
+          parseInt(low_stock_threshold, 10) || 5,
+          unit ? unit.trim() : 'pcs'
+        ]
+      );
+      if (result.rows?.[0] && cleanImageUrl) {
+        result.rows[0].image_url = cleanImageUrl;
+      }
+    }
 
     return res.status(201).json({
       success: true,

@@ -51,6 +51,9 @@ app.get('/', (req, res) => {
 // Global error handler
 app.use(errorHandler);
 
+// Ensure product table has image_url column in PostgreSQL Neon DB
+db.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT;').catch(() => {});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`====================================================`);

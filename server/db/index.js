@@ -2055,7 +2055,7 @@ function executeMemoryQuery(text, params) {
 
   // 28. INSERT INTO products
   if (normalized.startsWith('INSERT INTO products')) {
-    const [merchant_id, product_name, sku, category, purchase_price, selling_price, stock_quantity, low_stock_threshold, unit] = params;
+    const [merchant_id, product_name, sku, category, purchase_price, selling_price, stock_quantity, low_stock_threshold, unit, image_url] = params;
     const newProduct = {
       id: memoryStore.productSeq++,
       merchant_id: parseInt(merchant_id, 10),
@@ -2067,6 +2067,7 @@ function executeMemoryQuery(text, params) {
       stock_quantity: parseInt(stock_quantity, 10) || 0,
       low_stock_threshold: parseInt(low_stock_threshold, 10) || 5,
       unit: unit ? unit.trim() : 'pcs',
+      image_url: image_url ? image_url.trim() : null,
       created_at: new Date(),
       updated_at: new Date()
     };

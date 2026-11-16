@@ -94,6 +94,7 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
     stock_quantity: '50',
     unit: 'pcs',
     is_veg: true,
+    image_url: '', // Optional Dish Photo URL
     description: ''
   });
   const [isSavingMenu, setIsSavingMenu] = useState(false);
@@ -158,7 +159,8 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
         purchase_price: parseFloat(menuForm.selling_price) * 0.6,
         stock_quantity: parseInt(menuForm.stock_quantity, 10) || 50,
         low_stock_threshold: 5,
-        unit: menuForm.unit || 'pcs'
+        unit: menuForm.unit || 'pcs',
+        image_url: menuForm.image_url && menuForm.image_url.trim() ? menuForm.image_url.trim() : null
       });
       if (res.success) {
         alert(`✅ Dish "${menuForm.product_name}" added to menu successfully!`);
@@ -170,6 +172,7 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
           stock_quantity: '50',
           unit: 'pcs',
           is_veg: true,
+          image_url: '',
           description: ''
         });
         fetchCatalog();
@@ -713,6 +716,18 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
                       className="bg-slate-900/70 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 flex flex-col justify-between transition-all hover:shadow-xl group"
                     >
                       <div>
+                        {/* Optional Dish Photo Image */}
+                        {product.image_url && (
+                          <div className="w-full h-36 rounded-xl overflow-hidden mb-3 bg-slate-950 border border-slate-800/80 relative">
+                            <img
+                              src={product.image_url}
+                              alt={product.product_name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
+
                         {/* Category & Stock Badges */}
                         <div className="flex items-center justify-between gap-2 mb-2.5">
                           <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">
@@ -1673,12 +1688,12 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {[
-                  { name: 'Chicken Dum Biryani', cat: 'Main Course', price: '280', veg: false },
-                  { name: 'Special Cappuccino', cat: 'Beverages', price: '160', veg: true },
-                  { name: 'Paneer Butter Masala', cat: 'Main Course', price: '240', veg: true },
-                  { name: 'Crispy Masala Dosa', cat: 'Fast Food', price: '90', veg: true },
-                  { name: 'Chocolate Brownie', cat: 'Desserts', price: '140', veg: true },
-                  { name: 'Fresh Mango Smoothie', cat: 'Beverages', price: '120', veg: true },
+                  { name: 'Chicken Dum Biryani', cat: 'Main Course', price: '280', veg: false, img: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80' },
+                  { name: 'Special Cappuccino', cat: 'Beverages', price: '160', veg: true, img: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=600&q=80' },
+                  { name: 'Paneer Butter Masala', cat: 'Main Course', price: '240', veg: true, img: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=600&q=80' },
+                  { name: 'Crispy Masala Dosa', cat: 'Fast Food', price: '90', veg: true, img: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=600&q=80' },
+                  { name: 'Chocolate Brownie', cat: 'Desserts', price: '140', veg: true, img: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=600&q=80' },
+                  { name: 'Fresh Mango Smoothie', cat: 'Beverages', price: '120', veg: true, img: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=600&q=80' },
                 ].map((preset, idx) => (
                   <button
                     key={idx}
@@ -1689,7 +1704,8 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
                         product_name: preset.name,
                         category: preset.cat,
                         selling_price: preset.price,
-                        is_veg: preset.veg
+                        is_veg: preset.veg,
+                        image_url: preset.img
                       }));
                     }}
                     className="text-[10px] px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-amber-500/20 hover:text-amber-300 text-slate-300 border border-slate-700 transition-all font-medium"
@@ -1785,6 +1801,81 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
                     </button>
                   </div>
                 </div>
+              </div>
+
+              {/* Optional Dish Photo Section */}
+              <div className="space-y-2 pt-2 border-t border-slate-800">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Dish Photo (Optional)</span>
+                    <span className="text-[10px] text-slate-500 font-normal">ఐచ్చికం - కావాలంటే యాడ్ చేయవచ్చు</span>
+                  </label>
+                  {menuForm.image_url && (
+                    <button
+                      type="button"
+                      onClick={() => setMenuForm(prev => ({ ...prev, image_url: '' }))}
+                      className="text-[10px] text-rose-400 hover:text-rose-300 underline"
+                    >
+                      Clear Photo
+                    </button>
+                  )}
+                </div>
+
+                <input
+                  type="url"
+                  placeholder="Paste dish photo URL (e.g. https://images.unsplash.com/...)"
+                  value={menuForm.image_url || ''}
+                  onChange={(e) => setMenuForm(prev => ({ ...prev, image_url: e.target.value }))}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                />
+
+                {/* 1-Click Dish Photo Presets */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] text-slate-400 font-semibold block">
+                    📸 1-Click Food Photo Presets:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: '🍗 Biryani', url: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80' },
+                      { label: '☕ Cappuccino', url: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=600&q=80' },
+                      { label: '🧀 Paneer Curry', url: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=600&q=80' },
+                      { label: '🥞 Dosa', url: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=600&q=80' },
+                      { label: '🍕 Pizza / Fast Food', url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80' },
+                      { label: '🍫 Brownie / Cake', url: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=600&q=80' },
+                      { label: '🥤 Juice / Shake', url: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=600&q=80' },
+                      { label: '🥗 Starter / Salad', url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80' }
+                    ].map((p, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setMenuForm(prev => ({ ...prev, image_url: p.url }))}
+                        className={`text-[10px] px-2 py-0.5 rounded-md border transition-all ${
+                          menuForm.image_url === p.url
+                            ? 'bg-amber-500/25 text-amber-300 border-amber-500/50 font-bold'
+                            : 'bg-slate-950 hover:bg-slate-800 text-slate-400 border-slate-800'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Live Photo Preview */}
+                {menuForm.image_url && (
+                  <div className="relative w-full h-24 rounded-xl overflow-hidden border border-amber-500/40 bg-slate-950 mt-1">
+                    <img
+                      src={menuForm.image_url}
+                      alt="Dish Preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                    <span className="absolute bottom-1 right-2 text-[10px] font-bold bg-slate-950/80 px-2 py-0.5 rounded text-amber-300">
+                      Live Preview
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
