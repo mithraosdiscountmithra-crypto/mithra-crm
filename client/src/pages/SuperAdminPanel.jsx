@@ -44,7 +44,14 @@ export default function SuperAdminPanel({ setActiveTab }) {
     total_products: 0
   });
 
-  const [vendors, setVendors] = useState([]);
+  const [vendors, setVendors] = useState(() => {
+    try {
+      const cached = localStorage.getItem('cached_platform_vendors');
+      return cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -73,7 +80,20 @@ export default function SuperAdminPanel({ setActiveTab }) {
       const res = await api.admin.getOverview();
       if (res.success) {
         setStats(res.stats || {});
-        setVendors(res.vendors || []);
+        // Merge server vendors with locally created/cached vendors
+        setVendors(prev => {
+          const serverVendors = res.vendors || [];
+          const map = new Map();
+          // Add cached vendors first
+          prev.forEach(v => { if (v && (v.id || v.email)) map.set(v.id || v.email, v); });
+          // Overwrite with server truth
+          serverVendors.forEach(v => { if (v && (v.id || v.email)) map.set(v.id || v.email, v); });
+          const combined = Array.from(map.values()).sort((a, b) => (b.id || 0) - (a.id || 0));
+          try {
+            localStorage.setItem('cached_platform_vendors', JSON.stringify(combined));
+          } catch (e) {}
+          return combined;
+        });
       } else {
         setError(res.error || 'Failed to load platform data');
       }
@@ -119,12 +139,46 @@ export default function SuperAdminPanel({ setActiveTab }) {
       setError('');
       const res = await api.admin.createVendor(newVendorForm);
       if (res.success) {
+        const createdV = {
+          ...(res.vendor || {}),
+          id: res.vendor?.id || Date.now(),
+          store_name: newVendorForm.store_name.trim(),
+          owner_name: newVendorForm.owner_name.trim(),
+          category: newVendorForm.category || 'Restaurant & Dining',
+          phone: newVendorForm.phone.trim(),
+          email: newVendorForm.email.trim(),
+          city: newVendorForm.city || 'Hyderabad',
+          address: newVendorForm.address || '',
+          is_active: true,
+          total_customers: 0,
+          active_members: 0,
+          total_products: 0,
+          total_sales: 0
+        };
+
+        // Immediately prepend to vendors list so user sees it right away!
+        setVendors(prev => {
+          const filtered = prev.filter(v => v.id !== createdV.id && v.email !== createdV.email);
+          const updated = [createdV, ...filtered];
+          try {
+            localStorage.setItem('cached_platform_vendors', JSON.stringify(updated));
+          } catch (e) {}
+          return updated;
+        });
+
+        setStats(prev => ({
+          ...prev,
+          total_vendors: Math.max((prev.total_vendors || 0) + 1, 1),
+          active_vendors: Math.max((prev.active_vendors || 0) + 1, 1)
+        }));
+
         setProvisionedVendor({
-          ...res.vendor,
+          ...createdV,
           rawPassword: newVendorForm.password,
           whatsappLink: res.whatsapp_link,
           whatsappMessage: res.whatsapp_message
         });
+
         setIsCreateModalOpen(false);
         setCreateModalError('');
         setNewVendorForm({
@@ -137,6 +191,10 @@ export default function SuperAdminPanel({ setActiveTab }) {
           city: 'Hyderabad',
           address: ''
         });
+
+        setSuccessMsg(`🎉 Store "${createdV.store_name}" added to list successfully!`);
+        setTimeout(() => setSuccessMsg(''), 5000);
+
         fetchOverview();
       } else {
         setCreateModalError(res.error || 'Failed to provision vendor');
