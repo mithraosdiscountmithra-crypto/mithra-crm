@@ -1,10 +1,14 @@
 function getApiBase() {
-  let base = (import.meta.env.VITE_API_BASE_URL || '/api').trim();
-  base = base.replace(/\/+$/, '');
-  if (base.startsWith('http') && !base.endsWith('/api')) {
-    base = `${base}/api`;
+  if (import.meta.env.VITE_API_BASE_URL) {
+    let base = import.meta.env.VITE_API_BASE_URL.trim().replace(/\/+$/, '');
+    if (!base.endsWith('/api')) base = `${base}/api`;
+    return base;
   }
-  return base;
+  // When hosted on Vercel or custom domain, route directly to live Render backend
+  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+    return 'https://mithra-crm.onrender.com/api';
+  }
+  return '/api';
 }
 
 const API_BASE = getApiBase();

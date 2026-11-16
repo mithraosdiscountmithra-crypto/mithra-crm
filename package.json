@@ -4,7 +4,7 @@
   "description": "Multi-Tenant Merchant Loyalty and Membership SaaS CRM platform using Node.js, Express, PostgreSQL (Neon DB), and React/Tailwind CSS",
   "scripts": {
     "start": "node server/index.js",
-    "build": "npm --prefix server install",
+    "build": "cd client && npm install && npm run build",
     "server:install": "cd server && npm install",
     "client:install": "cd client && npm install",
     "install:all": "npm run server:install && npm run client:install",
