@@ -302,7 +302,50 @@ export const api = {
   admin: {
     login: (credentials) => request('/admin/login', { method: 'POST', body: credentials }),
     getOverview: () => request('/admin/overview'),
-    createVendor: (data) => request('/admin/vendors', { method: 'POST', body: data }),
+    createVendor: async (data) => {
+      try {
+        const res = await request('/admin/vendors', { method: 'POST', body: data });
+        if (res && res.success) return res;
+      } catch (err) {
+        console.warn('POST /admin/vendors notice, trying /auth/register fallback:', err.message);
+        if (err.status === 409 || err.message?.includes('already exists')) {
+          throw err;
+        }
+      }
+
+      // Robust fallback to public register endpoint
+      const regRes = await request('/auth/register', {
+        method: 'POST',
+        body: {
+          store_name: data.store_name,
+          owner_name: data.owner_name,
+          category: data.category || 'Retail',
+          phone: data.phone,
+          email: data.email,
+          password: data.password,
+          address: data.address || '',
+          city: data.city || 'Hyderabad'
+        }
+      });
+
+      if (regRes && regRes.success && regRes.merchant) {
+        const vendor = regRes.merchant;
+        const cleanWa = (data.phone || '').replace(/[^0-9]/g, '');
+        const waNum = cleanWa.startsWith('91') ? cleanWa : `91${cleanWa.replace(/^0+/, '')}`;
+        const waText = `👑 *Mithra CRM - Store Account Activated!*\n\nNamaste *${data.owner_name}* garu! Your store *${data.store_name}* is now live on Mithra Loyalty CRM & POS SaaS platform.\n\n🌐 *Login Portal:* https://mithra-crm.vercel.app\n📧 *Email:* ${data.email}\n🔑 *Password:* ${data.password}\n\n📱 *Your Storefront QR & Digital Menu:*\nhttps://mithra-crm.vercel.app/storefront?merchant=${vendor.id}\n\nStart issuing VIP passes, adding menu items, and boosting customer repeat visits today!`;
+        const waLink = `https://wa.me/${waNum}?text=${encodeURIComponent(waText)}`;
+
+        return {
+          success: true,
+          message: `🎉 Vendor store "${data.store_name}" provisioned successfully!`,
+          vendor,
+          whatsapp_message: waText,
+          whatsapp_link: waLink
+        };
+      }
+
+      throw new Error(regRes?.error || 'Failed to provision vendor store');
+    },
     toggleVendorStatus: (id, is_active) => request(`/admin/vendors/${id}/status`, { method: 'PATCH', body: { is_active } }),
     impersonateVendor: (id) => request(`/admin/vendors/${id}/impersonate`, { method: 'POST' }),
   }

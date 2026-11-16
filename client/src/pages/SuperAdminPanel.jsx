@@ -51,6 +51,7 @@ export default function SuperAdminPanel({ setActiveTab }) {
   // Provisioning Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [provisioning, setProvisioning] = useState(false);
+  const [createModalError, setCreateModalError] = useState('');
   const [newVendorForm, setNewVendorForm] = useState({
     store_name: '',
     owner_name: '',
@@ -108,12 +109,13 @@ export default function SuperAdminPanel({ setActiveTab }) {
   const handleCreateVendor = async (e) => {
     e.preventDefault();
     if (!newVendorForm.store_name.trim() || !newVendorForm.owner_name.trim() || !newVendorForm.phone.trim() || !newVendorForm.email.trim() || !newVendorForm.password.trim()) {
-      setError('Please fill all mandatory fields (Store Name, Owner, Phone, Email, Password).');
+      setCreateModalError('Please fill all mandatory fields (Store Name, Owner, Phone, Email, Password).');
       return;
     }
 
     try {
       setProvisioning(true);
+      setCreateModalError('');
       setError('');
       const res = await api.admin.createVendor(newVendorForm);
       if (res.success) {
@@ -124,6 +126,7 @@ export default function SuperAdminPanel({ setActiveTab }) {
           whatsappMessage: res.whatsapp_message
         });
         setIsCreateModalOpen(false);
+        setCreateModalError('');
         setNewVendorForm({
           store_name: '',
           owner_name: '',
@@ -136,10 +139,10 @@ export default function SuperAdminPanel({ setActiveTab }) {
         });
         fetchOverview();
       } else {
-        setError(res.error || 'Failed to provision vendor');
+        setCreateModalError(res.error || 'Failed to provision vendor');
       }
     } catch (err) {
-      setError(err.message || 'Error provisioning vendor');
+      setCreateModalError(err.message || 'Error provisioning vendor');
     } finally {
       setProvisioning(false);
     }
@@ -557,6 +560,11 @@ export default function SuperAdminPanel({ setActiveTab }) {
         maxWidth="max-w-xl"
       >
         <form onSubmit={handleCreateVendor} className="space-y-4">
+          {createModalError && (
+            <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-semibold animate-in shake">
+              ⚠️ {createModalError}
+            </div>
+          )}
           <p className="text-xs text-slate-300">
             కొత్త దుకాణం/రెస్టారెంట్ వివరాలను నమోదు చేయండి. అకౌంట్ క్రియేట్ అయిన వెంటనే 3 డిఫాల్ట్ VIP ప్లాన్స్ అమర్చబడతాయి మరియు వెండర్‌కు వాట్సాప్ లింక్ జనరేట్ అవుతుంది:
           </p>
@@ -708,9 +716,16 @@ export default function SuperAdminPanel({ setActiveTab }) {
             <button
               type="submit"
               disabled={provisioning}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-lg shadow-amber-500/25 disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-500/25 disabled:opacity-50"
             >
-              {provisioning ? <span>Creating Store...</span> : <span>✨ Create Store & Generate WhatsApp Link</span>}
+              {provisioning ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-950 border-t-transparent" />
+                  <span>Creating Store & Setting VIP Plans...</span>
+                </>
+              ) : (
+                <span>✨ Create Store & Generate WhatsApp Link</span>
+              )}
             </button>
           </div>
         </form>
