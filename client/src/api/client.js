@@ -235,6 +235,7 @@ export const api = {
     getProducts: (tenantId = 1) => request(`/customer/products?tenant_id=${tenantId}`),
     checkMembership: (tenantId = 1, phone = '') =>
       request(`/customer/membership-check?tenant_id=${tenantId}&phone=${encodeURIComponent(phone)}`),
+    joinVIP: (data) => request('/customer/join-vip', { method: 'POST', body: data }),
     placeOrder: (data) => request('/customer/orders', { method: 'POST', body: data }),
     getOrders: (tenantId = 1, phone = '') =>
       request(`/customer/orders?tenant_id=${tenantId}${phone ? `&phone=${encodeURIComponent(phone)}` : ''}`),

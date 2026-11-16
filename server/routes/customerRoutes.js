@@ -2,6 +2,7 @@ import express from 'express';
 import {
   getStorefrontProducts,
   checkCustomerMembership,
+  joinVIPStorefront,
   placeCustomerOrder,
   getCustomerOrders,
   getMerchantStorefrontOrders,
@@ -14,6 +15,7 @@ const router = express.Router();
 // Public Customer Storefront Endpoints
 router.get('/products', getStorefrontProducts);
 router.get('/membership-check', checkCustomerMembership);
+router.post('/join-vip', joinVIPStorefront);
 router.post('/orders', placeCustomerOrder);
 router.get('/orders', getCustomerOrders);
 

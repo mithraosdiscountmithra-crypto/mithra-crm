@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { playOrderChime } from '../utils/sound';
 import { uploadToCloudinary } from '../utils/cloudinary';
 import VendorQRModal from '../components/VendorQRModal';
+import Modal from '../components/Modal';
 import { 
   Store, 
   ShoppingBag, 
@@ -28,22 +29,23 @@ import {
   Package, 
   X, 
   ChevronRight, 
-  User,
-  Check,
-  Percent,
-  BadgeAlert,
-  Send,
-  Eye,
-  ListOrdered,
-  Volume2,
-  Camera,
-  UtensilsCrossed,
-  Banknote,
-  PlusCircle,
-  Image as ImageIcon,
-  Upload,
-  Loader2,
-  QrCode
+  User, 
+  Check, 
+  Percent, 
+  BadgeAlert, 
+  Send, 
+  Eye, 
+  ListOrdered, 
+  Volume2, 
+  Camera, 
+  UtensilsCrossed, 
+  Banknote, 
+  PlusCircle, 
+  Image as ImageIcon, 
+  Upload, 
+  Loader2, 
+  QrCode,
+  Crown
 } from 'lucide-react';
 
 export default function CustomerStorefront({ initialSubView = 'store', isPublicCustomer = false }) {
@@ -97,11 +99,19 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
   const [cart, setCart] = useState({});
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
 
-  // VIP / Mithra Plus Membership Verification
+  // VIP / Mithra Plus Membership Verification & Storefront Pass Purchases
   const [membershipPhone, setMembershipPhone] = useState('');
   const [isCheckingVip, setIsCheckingVip] = useState(false);
   const [vipStatus, setVipStatus] = useState(null); // { has_membership, customer, membership, message }
   const [vipError, setVipError] = useState('');
+
+  // Storefront VIP Pass Purchase State
+  const [availablePlans, setAvailablePlans] = useState([]);
+  const [selectedStorePlanId, setSelectedStorePlanId] = useState('');
+  const [vipBuyerName, setVipBuyerName] = useState('');
+  const [isJoiningVIP, setIsJoiningVIP] = useState(false);
+  const [showBuyVipModal, setShowBuyVipModal] = useState(false);
+  const [joinVipSuccess, setJoinVipSuccess] = useState('');
 
   // Customer Checkout Form
   const [customerName, setCustomerName] = useState('');
@@ -220,6 +230,18 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
         });
         setProducts(res.products || []);
         setCategories(res.categories || ['All']);
+        if (res.membership_plans && res.membership_plans.length > 0) {
+          setAvailablePlans(res.membership_plans);
+          setSelectedStorePlanId(res.membership_plans[0].id);
+        } else {
+          const defaultPlans = [
+            { id: 1, plan_name: 'Silver Member', discount_percent: 10, price: 99, validity_months: 12, benefits_description: '10% instant discount on all orders' },
+            { id: 2, plan_name: 'Gold VIP Pass', discount_percent: 20, price: 199, validity_months: 12, benefits_description: '20% VIP discount on all orders + priority billing' },
+            { id: 3, plan_name: 'Platinum VIP Elite', discount_percent: 30, price: 299, validity_months: 12, benefits_description: '30% Elite discount + special celebratory perks' }
+          ];
+          setAvailablePlans(defaultPlans);
+          setSelectedStorePlanId(defaultPlans[0].id);
+        }
       } else {
         setError(res.error || 'Failed to load storefront catalog.');
       }
@@ -407,6 +429,7 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
     try {
       setIsCheckingVip(true);
       setVipError('');
+      setJoinVipSuccess('');
       const res = await api.customer.checkMembership(tenantId, membershipPhone.trim());
       if (res.success && res.has_membership) {
         setVipStatus(res);
@@ -418,13 +441,59 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
           setCustomerPhone(res.customer.phone);
         }
       } else {
-        setVipStatus({ has_membership: false, message: res.message || 'No active VIP membership found.' });
+        setVipStatus({ has_membership: false, message: res.message || 'No active VIP membership found for this number.' });
       }
     } catch (err) {
       console.error('VIP verification failed:', err);
-      setVipError('Failed to verify membership. Please verify phone number.');
+      setVipError('Failed to verify membership. Please check phone number.');
     } finally {
       setIsCheckingVip(false);
+    }
+  };
+
+  // Public Customer Buy VIP Pass Handler (1-Click Storefront Join)
+  const handleBuyVIPStorefront = async (e) => {
+    if (e) e.preventDefault();
+    const phone = (membershipPhone || customerPhone).trim();
+    if (!phone) {
+      setVipError('Please enter your 10-digit mobile number.');
+      return;
+    }
+    const planToBuy = selectedStorePlanId || (availablePlans[0]?.id || 1);
+
+    try {
+      setIsJoiningVIP(true);
+      setVipError('');
+      setJoinVipSuccess('');
+
+      const res = await api.customer.joinVIP({
+        tenant_id: tenantId,
+        phone: phone,
+        name: vipBuyerName.trim() || customerName.trim() || 'VIP Member',
+        plan_id: planToBuy
+      });
+
+      if (res.success) {
+        setVipStatus({
+          has_membership: true,
+          customer: res.customer,
+          membership: res.membership
+        });
+        setJoinVipSuccess(res.message);
+        if (res.customer?.name) setCustomerName(res.customer.name);
+        if (res.customer?.phone) {
+          setCustomerPhone(res.customer.phone);
+          setMembershipPhone(res.customer.phone);
+        }
+        setShowBuyVipModal(false);
+      } else {
+        setVipError(res.error || 'Failed to activate VIP pass.');
+      }
+    } catch (err) {
+      console.error('Error joining VIP:', err);
+      setVipError(err.message || 'Error activating VIP pass.');
+    } finally {
+      setIsJoiningVIP(false);
     }
   };
 
@@ -705,30 +774,40 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
                   </div>
                 </div>
 
-                {/* VIP Verification Card */}
+                {/* VIP Verification & Pass Purchase Card */}
                 <div className="bg-slate-950/80 backdrop-blur-md p-3.5 sm:p-4 rounded-xl border border-slate-800 w-full md:w-80 shadow-lg">
                   <div className="flex items-center justify-between text-xs font-bold mb-2">
                     <span className="text-amber-400 flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5" /> VIP Member Check
+                      <Sparkles className="w-3.5 h-3.5" /> VIP Member Perks
                     </span>
-                    {vipStatus?.has_membership && (
+                    {vipStatus?.has_membership ? (
                       <span className="text-emerald-400 font-extrabold flex items-center gap-1">
                         <Check className="w-3 h-3" /> {vipStatus.membership?.discount_percent}% OFF
                       </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowBuyVipModal(true)}
+                        className="text-[10px] text-amber-300 font-bold bg-amber-500/20 hover:bg-amber-500/30 px-2 py-0.5 rounded-full border border-amber-500/30 transition flex items-center gap-1"
+                      >
+                        <Crown className="w-2.5 h-2.5 text-amber-400" />
+                        <span>+ Buy VIP Pass</span>
+                      </button>
                     )}
                   </div>
 
                   {vipStatus?.has_membership ? (
                     <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-1">
-                      <div className="font-bold text-emerald-300">
-                        🎉 VIP Member: {vipStatus.customer?.name}
+                      <div className="font-bold text-emerald-300 flex items-center gap-1.5">
+                        <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                        <span>🎉 VIP Member: {vipStatus.customer?.name}</span>
                       </div>
                       <div className="text-[11px] text-slate-300">
-                        Plan: <span className="font-semibold text-white">{vipStatus.membership?.plan_name}</span> ({vipStatus.membership?.discount_percent}% VIP Discount)
+                        Plan: <span className="font-semibold text-white">{vipStatus.membership?.plan_name}</span> ({vipStatus.membership?.discount_percent}% VIP Discount Applied)
                       </div>
                       <button
                         onClick={() => { setVipStatus(null); setMembershipPhone(''); }}
-                        className="text-[10px] text-slate-400 hover:text-white underline mt-1"
+                        className="text-[10px] text-slate-400 hover:text-white underline mt-1 block"
                       >
                         Change Member Number
                       </button>
@@ -739,7 +818,7 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
                         <Phone className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500" />
                         <input
                           type="tel"
-                          placeholder="Enter VIP member phone..."
+                          placeholder="Enter mobile number to check..."
                           value={membershipPhone}
                           onChange={(e) => setMembershipPhone(e.target.value)}
                           className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
@@ -749,7 +828,7 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
                         <button
                           type="submit"
                           disabled={isCheckingVip}
-                          className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                          className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-md shadow-amber-500/20"
                         >
                           {isCheckingVip ? (
                             <span>Checking...</span>
@@ -761,11 +840,80 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
                           )}
                         </button>
                       </div>
+
                       {vipError && (
                         <p className="text-[11px] text-rose-400 font-medium">{vipError}</p>
                       )}
+
+                      {/* NEW USER / NO ACTIVE PLAN -> SHOW INLINE 1-CLICK VIP PASS PURCHASE */}
                       {vipStatus && !vipStatus.has_membership && (
-                        <p className="text-[11px] text-slate-400 font-medium">{vipStatus.message}</p>
+                        <div className="pt-2.5 border-t border-amber-500/30 space-y-2.5 animate-in fade-in">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-black text-amber-300 flex items-center gap-1">
+                              <Crown className="w-3.5 h-3.5 text-amber-400" />
+                              <span>New User? Buy VIP Pass Now:</span>
+                            </span>
+                            <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded">
+                              Instant Discount
+                            </span>
+                          </div>
+                          
+                          <p className="text-[11px] text-slate-300">
+                            ఈ నెంబర్‌పై ఇంకా VIP ప్లాన్ లేదు. ప్లాన్ ఎంచుకుని వెంటనే జాయిన్ అవ్వండి:
+                          </p>
+
+                          <input
+                            type="text"
+                            placeholder="Your Full Name (e.g. Anil)"
+                            value={vipBuyerName}
+                            onChange={(e) => setVipBuyerName(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                          />
+
+                          {/* Plan options */}
+                          <div className="space-y-1.5">
+                            {availablePlans.map((p) => {
+                              const isSelected = selectedStorePlanId === p.id || availablePlans.length === 1;
+                              return (
+                                <div
+                                  key={p.id}
+                                  onClick={() => setSelectedStorePlanId(p.id)}
+                                  className={`p-2 rounded-lg border cursor-pointer transition flex items-center justify-between ${
+                                    isSelected 
+                                      ? 'bg-amber-500/20 border-amber-400 text-white shadow-sm' 
+                                      : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-amber-400' : 'bg-slate-600'}`}></span>
+                                    <span className="font-bold">{p.plan_name}</span>
+                                    <span className="text-[10px] text-amber-300 font-mono">₹{p.price || 0}</span>
+                                  </div>
+                                  <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950">
+                                    {p.discount_percent}% OFF
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Big Buy Button */}
+                          <button
+                            type="button"
+                            onClick={handleBuyVIPStorefront}
+                            disabled={isJoiningVIP}
+                            className="w-full py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-400 hover:brightness-110 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 transition disabled:opacity-50"
+                          >
+                            {isJoiningVIP ? (
+                              <span>Activating VIP Pass...</span>
+                            ) : (
+                              <>
+                                <Crown className="w-3.5 h-3.5 fill-slate-950" />
+                                <span>👑 Buy VIP Pass & Apply Discount (జాయిన్ అవ్వండి)</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       )}
                     </form>
                   )}
@@ -1440,6 +1588,26 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
                   <span className="block text-[10px]">Khata</span>
                 </button>
               </div>
+
+              {/* VIP Membership Upsell Banner in Checkout */}
+              {!vipStatus?.has_membership && (
+                <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-slate-900 to-indigo-950/40 border border-amber-500/40 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-4 h-4 text-amber-400 fill-amber-400 shrink-0" />
+                    <div>
+                      <div className="text-xs font-black text-white">Join VIP & Save on this bill!</div>
+                      <div className="text-[10px] text-amber-300">Get up to 30% instant discount</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowBuyVipModal(true)}
+                    className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] shadow transition shrink-0"
+                  >
+                    👑 Buy Pass
+                  </button>
+                </div>
+              )}
 
               {/* Price summary */}
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
@@ -2241,12 +2409,122 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
         </div>
       )}
 
-          {/* Vendor QR Code & Table Standee Modal */}
-          <VendorQRModal 
-            isOpen={isQRModalOpen} 
-            onClose={() => setIsQRModalOpen(false)} 
-            merchant={merchant || storeInfo} 
-          />
+      {/* Customer Storefront Buy VIP Pass Modal */}
+      <Modal
+        isOpen={showBuyVipModal}
+        onClose={() => setShowBuyVipModal(false)}
+        title="👑 Join Mithra Plus VIP Membership"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-slate-300">
+            Select a membership tier below to get instant discounts on this order and all future orders!
+          </p>
+
+          <div>
+            <label className="text-[11px] font-bold text-slate-300 block mb-1">
+              Your 10-Digit Mobile Number *
+            </label>
+            <div className="relative">
+              <Phone className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-500" />
+              <input
+                type="tel"
+                required
+                placeholder="e.g. 9876543210"
+                value={membershipPhone || customerPhone}
+                onChange={(e) => {
+                  setMembershipPhone(e.target.value);
+                  setCustomerPhone(e.target.value);
+                }}
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 font-mono"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-bold text-slate-300 block mb-1">
+              Your Full Name (Optional)
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Anil Kumar"
+              value={vipBuyerName || customerName}
+              onChange={(e) => {
+                setVipBuyerName(e.target.value);
+                setCustomerName(e.target.value);
+              }}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+            />
+          </div>
+
+          <div>
+            <label className="text-[11px] font-bold text-slate-300 block mb-1.5">
+              Choose VIP Membership Tier:
+            </label>
+            <div className="space-y-2">
+              {availablePlans.map((p) => {
+                const isSelected = selectedStorePlanId === p.id || availablePlans.length === 1;
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => setSelectedStorePlanId(p.id)}
+                    className={`p-3 rounded-xl border-2 cursor-pointer transition flex items-center justify-between ${
+                      isSelected
+                        ? 'bg-amber-500/20 border-amber-400 ring-2 ring-amber-400/40 shadow-md'
+                        : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                        isSelected ? 'border-amber-400 bg-amber-400 text-slate-950' : 'border-slate-600'
+                      }`}>
+                        {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                      </div>
+                      <div>
+                        <div className="font-bold text-white text-xs">{p.plan_name}</div>
+                        <div className="text-[10px] text-slate-400">
+                          ₹{p.price || 0} • {p.validity_months || 12} months validity
+                        </div>
+                      </div>
+                    </div>
+
+                    <span className="text-xs font-black px-2 py-0.5 rounded-lg bg-emerald-500 text-slate-950">
+                      {p.discount_percent}% OFF
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {vipError && (
+            <p className="text-xs text-rose-400 font-medium">{vipError}</p>
+          )}
+
+          <button
+            type="button"
+            onClick={handleBuyVIPStorefront}
+            disabled={isJoiningVIP || (!membershipPhone && !customerPhone)}
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:brightness-110 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/25 transition disabled:opacity-50"
+          >
+            {isJoiningVIP ? (
+              <span>Activating VIP Pass...</span>
+            ) : (
+              <>
+                <Crown className="w-4 h-4 fill-slate-950" />
+                <span>👑 Confirm & Activate VIP Pass (జాయిన్ అవ్వండి)</span>
+              </>
+            )}
+          </button>
+        </div>
+      </Modal>
+
+      {/* Vendor QR Code & Table Standee Modal */}
+      <VendorQRModal 
+        isOpen={isQRModalOpen} 
+        onClose={() => setIsQRModalOpen(false)} 
+        merchant={merchant || storeInfo} 
+      />
         </>
       )}
     </div>

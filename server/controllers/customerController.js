@@ -152,6 +152,117 @@ export const checkCustomerMembership = async (req, res, next) => {
   }
 };
 
+// 2b. POST /api/customer/join-vip - Public Customer VIP Pass Purchase / Self-Enrollment
+export const joinVIPStorefront = async (req, res, next) => {
+  try {
+    const { tenant_id, merchant_id, phone, name, plan_id } = req.body;
+    const mId = parseInt(tenant_id || merchant_id || 1, 10);
+
+    if (!phone || !plan_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Both phone number and VIP Membership Plan are required.'
+      });
+    }
+
+    const cleanPhone = String(phone).trim();
+    const cleanName = (name && String(name).trim()) || 'VIP Member';
+    const parsedPlanId = parseInt(plan_id, 10) || plan_id;
+
+    // 1. Verify plan exists and belongs to this merchant
+    let planRes = await db.query(
+      'SELECT id, plan_name, price, validity_months, discount_percent, benefits_description FROM membership_plans WHERE id = $1 AND merchant_id = $2',
+      [parsedPlanId, mId]
+    );
+
+    if (planRes.rows.length === 0) {
+      planRes = await db.query(
+        'SELECT id, plan_name, price, validity_months, discount_percent, benefits_description FROM membership_plans WHERE merchant_id = $1 ORDER BY id ASC LIMIT 1',
+        [mId]
+      );
+    }
+
+    if (planRes.rows.length === 0) {
+      // Auto-create starter Gold VIP plan if merchant has none
+      const newPlanRes = await db.query(
+        `INSERT INTO membership_plans (merchant_id, plan_name, price, validity_months, discount_percent, benefits_description)
+         VALUES ($1, 'Gold VIP Pass', 199.00, 12, 20.00, '20% VIP discount on all store items')
+         RETURNING id, plan_name, price, validity_months, discount_percent, benefits_description`,
+        [mId]
+      );
+      planRes = newPlanRes;
+    }
+
+    const plan = planRes.rows[0];
+
+    // 2. Find or create customer
+    let customer;
+    const existingCust = await db.query(
+      'SELECT id, name, phone FROM customers WHERE merchant_id = $1 AND phone = $2',
+      [mId, cleanPhone]
+    );
+
+    if (existingCust.rows.length > 0) {
+      customer = existingCust.rows[0];
+      if (name && name.trim() && customer.name === 'VIP Member') {
+        await db.query('UPDATE customers SET name = $1 WHERE id = $2', [name.trim(), customer.id]);
+        customer.name = name.trim();
+      }
+    } else {
+      const newCustRes = await db.query(
+        'INSERT INTO customers (merchant_id, name, phone) VALUES ($1, $2, $3) RETURNING id, name, phone',
+        [mId, cleanName, cleanPhone]
+      );
+      customer = newCustRes.rows[0];
+    }
+
+    // 3. Deactivate any prior active memberships
+    await db.query(
+      `UPDATE customer_memberships 
+       SET status = 'EXPIRED' 
+       WHERE customer_id = $1 AND status = 'ACTIVE'`,
+      [customer.id]
+    );
+
+    // 4. Create new active membership
+    const months = plan.validity_months || 12;
+    const startDate = new Date();
+    const expiryDate = new Date();
+    expiryDate.setMonth(expiryDate.getMonth() + months);
+
+    const memRes = await db.query(
+      `INSERT INTO customer_memberships (customer_id, plan_id, start_date, expiry_date, status)
+       VALUES ($1, $2, $3, $4, 'ACTIVE')
+       RETURNING *`,
+      [
+        customer.id,
+        plan.id,
+        startDate.toISOString().split('T')[0],
+        expiryDate.toISOString().split('T')[0]
+      ]
+    );
+
+    const membership = memRes.rows[0];
+
+    return res.status(201).json({
+      success: true,
+      message: `🎉 Welcome ${customer.name}! You are now a VIP Member (${plan.plan_name}) with ${plan.discount_percent}% OFF!`,
+      customer,
+      membership: {
+        plan_id: plan.id,
+        plan_name: plan.plan_name,
+        discount_percent: parseFloat(plan.discount_percent || 0),
+        price: parseFloat(plan.price || 0),
+        benefits_description: plan.benefits_description,
+        expiry_date: membership.expiry_date,
+        status: 'ACTIVE'
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // 3. POST /api/customer/orders - Handle customer checkout, stock decrement & Digital Khata debit
 export const placeCustomerOrder = async (req, res, next) => {
   try {

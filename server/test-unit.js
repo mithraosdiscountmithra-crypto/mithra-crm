@@ -55,6 +55,7 @@ import {
 import {
   getStorefrontProducts,
   checkCustomerMembership,
+  joinVIPStorefront,
   placeCustomerOrder,
   getCustomerOrders,
   getMerchantStorefrontOrders,
@@ -650,6 +651,23 @@ async function runUnitTests() {
     customerName: vipRes.body.customer?.name,
     planName: vipRes.body.membership?.plan_name,
     discountPercent: `${vipRes.body.membership?.discount_percent}%`
+  });
+
+  // 34b. Test Customer Storefront: Public VIP Pass Purchase / Self-Enrollment
+  const { req: joinVipReq, res: joinVipRes } = mockReqRes({
+    body: {
+      tenant_id: 1,
+      phone: '9123456780',
+      name: 'Anil Kumar',
+      plan_id: 1
+    }
+  });
+  await joinVIPStorefront(joinVipReq, joinVipRes);
+  console.log('34b. Customer Storefront - Public QR VIP Pass Purchase:', {
+    passed: joinVipRes.body.success === true && joinVipRes.body.membership?.plan_name !== undefined,
+    customer: joinVipRes.body.customer?.name,
+    plan: joinVipRes.body.membership?.plan_name,
+    discount: `${joinVipRes.body.membership?.discount_percent}%`
   });
 
   // 35. Test Customer Checkout: Order Creation, Stock Decrement & Digital Khata Debit
