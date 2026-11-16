@@ -38,8 +38,8 @@ export default function Settings() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Cloudinary Settings State (Persisted to localStorage)
-  const [cloudName, setCloudName] = useState(localStorage.getItem('cloudinary_cloud_name') || '');
-  const [uploadPreset, setUploadPreset] = useState(localStorage.getItem('cloudinary_upload_preset') || '');
+  const [cloudName, setCloudName] = useState(localStorage.getItem('cloudinary_cloud_name') || 'abek7mb8');
+  const [uploadPreset, setUploadPreset] = useState(localStorage.getItem('cloudinary_upload_preset') || 'mithra_preset');
   const [cloudinarySaved, setCloudinarySaved] = useState(false);
   const [testingUpload, setTestingUpload] = useState(false);
   const [testResult, setTestResult] = useState(null);

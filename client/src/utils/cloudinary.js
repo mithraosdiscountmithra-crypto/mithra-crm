@@ -3,8 +3,8 @@
  * Supports direct client-side unsigned upload and backend fallback
  */
 
-const DEFAULT_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'mithracrm';
-const DEFAULT_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_PRESET || 'mithra_unsigned';
+const DEFAULT_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'abek7mb8';
+const DEFAULT_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_PRESET || 'mithra_preset';
 
 /**
  * Upload an image File object to Cloudinary
