@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../api/client';
 import Modal from '../components/Modal';
 import { 
@@ -13,13 +13,16 @@ import {
   Sparkles, 
   UserPlus, 
   Printer, 
-  RotateCcw,
-  Receipt,
-  Check,
-  Zap,
-  Tag,
-  Share2,
-  Calendar,
+  RotateCcw, 
+  Receipt, 
+  Check, 
+  Zap, 
+  Tag, 
+  Share2, 
+  Calendar, 
+  Plus, 
+  ArrowRight,
+  ShieldCheck,
   CreditCard
 } from 'lucide-react';
 
@@ -33,15 +36,24 @@ export default function POSCheckout() {
 
   // Phone search & member state
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [customerName, setCustomerName] = useState('');
   const [searching, setSearching] = useState(false);
   const [searchResult, setSearchResult] = useState(null);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // 1-Click VIP Enroll Inline state
-  const [enrollName, setEnrollName] = useState('');
+  // 1-Click VIP Enroll state
   const [enrollingVIP, setEnrollingVIP] = useState(false);
   const [showUpgradePlans, setShowUpgradePlans] = useState(false);
+
+  // Create New Plan Modal state
+  const [showCreatePlanModal, setShowCreatePlanModal] = useState(false);
+  const [newPlanName, setNewPlanName] = useState('');
+  const [newPlanPrice, setNewPlanPrice] = useState('199');
+  const [newPlanDiscount, setNewPlanDiscount] = useState('20');
+  const [newPlanMonths, setNewPlanMonths] = useState('12');
+  const [newPlanBenefits, setNewPlanBenefits] = useState('');
+  const [creatingPlan, setCreatingPlan] = useState(false);
 
   // Bill calculation state
   const [billAmount, setBillAmount] = useState('');
@@ -58,6 +70,8 @@ export default function POSCheckout() {
   const [passPlanId, setPassPlanId] = useState('');
   const [issuingPass, setIssuingPass] = useState(false);
 
+  const billInputRef = useRef(null);
+
   // Fetch plans on mount
   useEffect(() => {
     fetchPlans();
@@ -69,8 +83,8 @@ export default function POSCheckout() {
       const res = await api.plans.getAll();
       if (res.success && res.plans && res.plans.length > 0) {
         setPlans(res.plans);
-        setSelectedPlanId(res.plans[0].id);
-        setPassPlanId(res.plans[0].id);
+        if (!selectedPlanId) setSelectedPlanId(res.plans[0].id);
+        if (!passPlanId) setPassPlanId(res.plans[0].id);
       }
     } catch (err) {
       console.error('Failed to fetch membership plans:', err);
@@ -79,11 +93,59 @@ export default function POSCheckout() {
     }
   };
 
-  // Handle phone verification
+  // Create New Plan on the fly
+  const handleCreatePlan = async (e) => {
+    if (e) e.preventDefault();
+    if (!newPlanName.trim()) {
+      setError('Please provide a Plan Name.');
+      return;
+    }
+    if (!newPlanDiscount) {
+      setError('Please provide a Discount Percentage.');
+      return;
+    }
+
+    try {
+      setCreatingPlan(true);
+      setError('');
+
+      const res = await api.plans.create({
+        plan_name: newPlanName.trim(),
+        price: parseFloat(newPlanPrice) || 0,
+        discount_percent: parseFloat(newPlanDiscount) || 10,
+        validity_months: parseInt(newPlanMonths, 10) || 12,
+        benefits_description: newPlanBenefits.trim() || `${newPlanDiscount}% VIP discount on all orders`
+      });
+
+      if (res.success && res.plan) {
+        // Refresh plans
+        const updatedPlansRes = await api.plans.getAll();
+        if (updatedPlansRes.success) {
+          setPlans(updatedPlansRes.plans);
+          setSelectedPlanId(res.plan.id);
+          setPassPlanId(res.plan.id);
+        }
+        setShowCreatePlanModal(false);
+        setNewPlanName('');
+        setNewPlanPrice('199');
+        setNewPlanDiscount('20');
+        setNewPlanMonths('12');
+        setNewPlanBenefits('');
+        setSuccessMsg(`🎉 Plan "${res.plan.plan_name}" (${res.plan.discount_percent}% OFF) created & selected!`);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to create plan');
+    } finally {
+      setCreatingPlan(false);
+    }
+  };
+
+  // Check / Verify if phone number already exists
   const handleVerify = async (e) => {
     if (e) e.preventDefault();
-    if (!phoneNumber.trim()) {
-      setError('Please enter a phone number to search.');
+    const cleanPhone = phoneNumber.trim();
+    if (!cleanPhone) {
+      setError('Please enter a customer mobile number.');
       return;
     }
 
@@ -95,12 +157,20 @@ export default function POSCheckout() {
       setBillAmount('');
       setOverrideDiscount('');
 
-      const res = await api.pos.verifyPhone(phoneNumber.trim());
+      const res = await api.pos.verifyPhone(cleanPhone);
       if (res.success) {
         if (!res.found) {
-          setError(`No customer found with phone: ${phoneNumber}. You can enroll them as a VIP member below with 1 click!`);
+          setError(`Mobile ${cleanPhone} is not yet a member. Select a VIP Plan below and click "⚡ Join VIP & Start Billing"!`);
         } else {
           setSearchResult(res);
+          setCustomerName(res.customer.name || '');
+          if (res.membership && res.membership.plan_id) {
+            setSelectedPlanId(res.membership.plan_id);
+          }
+          // Focus bill amount
+          setTimeout(() => {
+            if (billInputRef.current) billInputRef.current.focus();
+          }, 150);
         }
       } else {
         setError(res.error || 'Verification failed');
@@ -112,13 +182,13 @@ export default function POSCheckout() {
     }
   };
 
-  // 1-Click Quick VIP Enrollment & Immediate Verification
+  // 1-Click Quick VIP Enrollment: ANY Phone Number + Selected Plan -> Immediate VIP
   const handleQuickEnroll = async (phoneToUse, planIdToUse, nameToUse) => {
     const targetPhone = String(phoneToUse || phoneNumber).trim();
     const targetPlan = planIdToUse || selectedPlanId;
 
     if (!targetPhone) {
-      setError('Please enter a phone number.');
+      setError('Please enter a customer mobile number.');
       return;
     }
     if (!targetPlan) {
@@ -133,7 +203,7 @@ export default function POSCheckout() {
 
       const res = await api.pos.quickEnrollVIP({
         phone: targetPhone,
-        name: nameToUse || enrollName || 'VIP Customer',
+        name: nameToUse || customerName || 'VIP Customer',
         plan_id: targetPlan
       });
 
@@ -146,8 +216,14 @@ export default function POSCheckout() {
           membership: res.membership
         });
         setPhoneNumber(targetPhone);
-        setEnrollName('');
+        setCustomerName(res.customer.name || '');
+        setSelectedPlanId(res.membership.plan_id);
         setShowUpgradePlans(false);
+
+        // Auto-focus bill input for immediate cashier billing
+        setTimeout(() => {
+          if (billInputRef.current) billInputRef.current.focus();
+        }, 150);
       } else {
         setError(res.error || 'Failed to enroll VIP member');
       }
@@ -196,14 +272,6 @@ export default function POSCheckout() {
     }
   };
 
-  // Sample quick test phones
-  const samplePhones = [
-    { label: 'Gold Member (20%)', phone: '5551234567' },
-    { label: 'Basic Member (10%)', phone: '5559876543' },
-    { label: 'VIP Pass (25%)', phone: '5553456789' },
-    { label: 'Non-Member', phone: '5554567890' }
-  ];
-
   // Calculate numbers
   const originalBill = parseFloat(billAmount) || 0;
   const activePlanDiscount = searchResult?.membership?.discount_percent || 0;
@@ -217,7 +285,7 @@ export default function POSCheckout() {
   // Process redemption transaction
   const handleRedeem = async () => {
     if (!searchResult || !searchResult.customer) {
-      setError('Please search and select a verified customer first.');
+      setError('Please search or enroll a customer first.');
       return;
     }
 
@@ -253,6 +321,7 @@ export default function POSCheckout() {
     setReceipt(null);
     setNewVIPCard(null);
     setPhoneNumber('');
+    setCustomerName('');
     setSearchResult(null);
     setBillAmount('');
     setOverrideDiscount('');
@@ -264,15 +333,15 @@ export default function POSCheckout() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header & Tab Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl">
         <div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Cashier Terminal</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-white">POS Billing & VIP Pass Activation</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-white">POS Member Verification & VIP Pass Sales</h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            1-Click VIP Enrollment: Number enter chesi plan select chesthe ventane VIP Member avtharu!
+            ఏ నెంబర్ అయినా ఎంటర్ చేసి, ప్లాన్ సెలెక్ట్ చేసి Enter కొడితే వెంటనే VIP మెంబర్ అయిపోతారు!
           </p>
         </div>
 
@@ -330,200 +399,192 @@ export default function POSCheckout() {
         </div>
       )}
 
-      {/* TAB 1: POS BILLING & LOOKUP */}
+      {/* ERROR BANNER */}
+      {error && (
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm flex items-center justify-between animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+            <span>{error}</span>
+          </div>
+          <button 
+            onClick={() => setError('')}
+            className="text-xs text-rose-400 hover:text-white font-bold px-2 py-1 rounded bg-rose-500/20"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* TAB 1: POS BILLING & 1-CLICK VIP ENROLLMENT */}
       {activeTab === 'billing' && (
         <div className="space-y-6">
-          {/* Lookup & Fast Enroll Bar */}
-          <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">
-                Step 1: Enter Customer Phone Number
+          {/* STEP 1: CUSTOMER PHONE + PLAN SELECTOR BAR */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[11px] font-mono">1</span>
+                <span>Enter Customer Mobile Number & Choose VIP Plan</span>
               </label>
-              <span className="text-[11px] text-amber-400 font-semibold flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Fast Member Verification & 1-Click VIP Join</span>
-              </span>
+
+              {/* + Create New Plan Button right in header */}
+              <button
+                type="button"
+                onClick={() => setShowCreatePlanModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition shadow"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Create New Plan (కొత్త ప్లాన్)</span>
+              </button>
             </div>
             
-            <form onSubmit={handleVerify} className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
+            {/* Input Row: Phone Number & Optional Customer Name */}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+              <div className="sm:col-span-8 relative">
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="e.g. 9876543210 (or click demo pills below)"
-                  className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (phoneNumber.trim()) {
+                        handleQuickEnroll(phoneNumber, selectedPlanId, customerName);
+                      }
+                    }
+                  }}
+                  placeholder="Enter 10-digit Mobile Number (e.g. 9876543210)"
+                  className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
                   autoFocus
                 />
               </div>
 
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={searching || !phoneNumber.trim()}
-                  className="px-6 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition disabled:opacity-50"
-                >
-                  {searching ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                  ) : (
-                    <Search className="w-4 h-4" />
-                  )}
-                  <span>Verify</span>
-                </button>
-
-                {plans.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => handleQuickEnroll(phoneNumber, selectedPlanId, enrollName)}
-                    disabled={enrollingVIP || !phoneNumber.trim()}
-                    className="px-5 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/25 transition disabled:opacity-50"
-                    title="Directly enroll this phone number as VIP without verifying first"
-                  >
-                    {enrollingVIP ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-950 border-t-transparent" />
-                    ) : (
-                      <Zap className="w-4 h-4 fill-slate-950" />
-                    )}
-                    <span>⚡ Join VIP</span>
-                  </button>
-                )}
-              </div>
-            </form>
-
-            {/* Demo Fast Click Phones */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="text-[11px] font-semibold text-slate-400">Quick Test:</span>
-              {samplePhones.map((p) => (
-                <button
-                  key={p.phone}
-                  type="button"
-                  onClick={() => {
-                    setPhoneNumber(p.phone);
-                    api.pos.verifyPhone(p.phone).then((res) => {
-                      if (res.success && res.found) {
-                        setSearchResult(res);
-                        setError('');
+              <div className="sm:col-span-4">
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (phoneNumber.trim()) {
+                        handleQuickEnroll(phoneNumber, selectedPlanId, customerName);
                       }
-                    });
+                    }
                   }}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition"
-                >
-                  {p.label}: <span className="font-mono text-sky-400 font-semibold">{p.phone}</span>
-                </button>
-              ))}
+                  placeholder="Customer Name (Optional)"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
             </div>
 
-            {/* ERROR OR NEW CUSTOMER INLINE ENROLLMENT BOX */}
-            {error && (
-              <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm space-y-3">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-                  <span>{error}</span>
-                </div>
-
-                {/* 1-Click Fast VIP Join Box when customer is not found */}
-                {error.includes('No customer found') && plans.length > 0 && (
-                  <div className="p-4 rounded-2xl bg-slate-950 border border-amber-500/40 text-slate-200 space-y-3 pt-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black uppercase text-amber-300 flex items-center gap-1.5">
-                        <Sparkles className="w-4 h-4 text-amber-400" />
-                        <span>⚡ 1-Click VIP Member Join (వెంటనే VIP ప్లాన్ సెలెక్ట్ చేయండి):</span>
-                      </span>
-                      <span className="text-xs font-mono font-bold text-white bg-slate-800 px-2 py-0.5 rounded">
-                        {phoneNumber}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                          Customer Name (Optional)
-                        </label>
-                        <input
-                          type="text"
-                          value={enrollName}
-                          onChange={(e) => setEnrollName(e.target.value)}
-                          placeholder="e.g. Ramesh Kumar"
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-amber-400"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                          Select Membership Plan:
-                        </label>
-                        <select
-                          value={selectedPlanId}
-                          onChange={(e) => setSelectedPlanId(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-bold focus:outline-none focus:ring-1 focus:ring-amber-400"
-                        >
-                          {plans.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.plan_name} ({p.discount_percent}% OFF) - ₹{p.price || 0}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Fast Plan Selector Pills */}
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {plans.map((p) => {
-                        const isSelected = selectedPlanId === p.id;
-                        return (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => setSelectedPlanId(p.id)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-2 ${
-                              isSelected
-                                ? 'bg-amber-500 text-slate-950 border-amber-400 ring-2 ring-amber-400/30'
-                                : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-600'
-                            }`}
-                          >
-                            <span>{p.plan_name}</span>
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-black ${
-                              isSelected ? 'bg-slate-950 text-amber-300' : 'bg-emerald-500/20 text-emerald-400'
-                            }`}>
-                              {p.discount_percent}% OFF
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleQuickEnroll(phoneNumber, selectedPlanId, enrollName)}
-                      disabled={enrollingVIP || !selectedPlanId}
-                      className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition disabled:opacity-50"
-                    >
-                      {enrollingVIP ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-950 border-t-transparent" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4 stroke-[2.5]" />
-                      )}
-                      <span>✨ Join as VIP Member & Start Billing (Enter ↵)</span>
-                    </button>
-                  </div>
-                )}
+            {/* LIVE PLAN SELECTOR PILLS (ALWAYS VISIBLE RIGHT BELOW INPUT) */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <Crown className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Select VIP Membership Plan to Apply:</span>
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  {plans.length} Plans Available
+                </span>
               </div>
-            )}
+
+              {/* Plan Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {plans.map((p) => {
+                  const isSelected = selectedPlanId === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setSelectedPlanId(p.id)}
+                      className={`p-3 rounded-2xl border text-left transition flex items-center justify-between group ${
+                        isSelected
+                          ? 'bg-gradient-to-r from-amber-500/25 via-slate-900 to-amber-950/30 border-amber-400 ring-2 ring-amber-400/50 shadow-lg shadow-amber-500/10'
+                          : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'
+                      }`}
+                    >
+                      <div className="min-w-0 pr-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-amber-400' : 'bg-slate-600'}`}></span>
+                          <span className="font-extrabold text-white text-xs truncate">{p.plan_name}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">
+                          ₹{p.price || 0} • {p.validity_months || 12} mos
+                        </div>
+                      </div>
+
+                      <span className={`text-xs font-black px-2 py-1 rounded-lg shrink-0 ${
+                        isSelected 
+                          ? 'bg-amber-400 text-slate-950 shadow' 
+                          : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      }`}>
+                        {p.discount_percent}% OFF
+                      </span>
+                    </button>
+                  );
+                })}
+
+                {/* Inline Add New Plan Button inside Grid */}
+                <button
+                  type="button"
+                  onClick={() => setShowCreatePlanModal(true)}
+                  className="p-3 rounded-2xl border border-dashed border-slate-700 hover:border-amber-400/60 bg-slate-950 hover:bg-slate-900/40 text-slate-400 hover:text-amber-300 transition flex items-center justify-center gap-2 text-xs font-bold"
+                >
+                  <Plus className="w-4 h-4 text-amber-400" />
+                  <span>+ Create Another Plan</span>
+                </button>
+              </div>
+            </div>
+
+            {/* ACTION BUTTONS ROW */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              {/* PRIMARY 1-CLICK JOIN & BILL BUTTON */}
+              <button
+                type="button"
+                onClick={() => handleQuickEnroll(phoneNumber, selectedPlanId, customerName)}
+                disabled={enrollingVIP || !phoneNumber.trim()}
+                className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-500/25 transition disabled:opacity-50"
+              >
+                {enrollingVIP ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-950 border-t-transparent" />
+                ) : (
+                  <Zap className="w-4 h-4 fill-slate-950" />
+                )}
+                <span>⚡ Join VIP Member & Proceed to Bill (Enter ↵)</span>
+              </button>
+
+              {/* SECONDARY CHECK EXISTING STATUS BUTTON */}
+              <button
+                type="button"
+                onClick={handleVerify}
+                disabled={searching || !phoneNumber.trim()}
+                className="px-6 py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center gap-2 border border-slate-700 transition disabled:opacity-50"
+                title="Check if this number is already an existing customer or has birthday perks"
+              >
+                {searching ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
+                <span>Check Existing Status</span>
+              </button>
+            </div>
           </div>
 
-          {/* Customer Status & Discount Calculator Section */}
+          {/* STEP 2: CUSTOMER STATUS CARD & POS BILL CALCULATOR */}
           {searchResult && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in duration-300">
               {/* Customer & Membership Verification Badge (5 cols) */}
               <div className="lg:col-span-5 rounded-3xl bg-slate-900 border border-slate-800 p-6 space-y-5">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Customer Status
+                    Customer Verified Profile
                   </span>
                   <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
                     <CheckCircle className="w-3.5 h-3.5" />
-                    <span>Verified</span>
+                    <span>Active Member</span>
                   </span>
                 </div>
 
@@ -551,7 +612,7 @@ export default function POSCheckout() {
                     </div>
                   )}
 
-                  {/* Membership Tier Card or 1-Click Sell Plan */}
+                  {/* Active Membership Badge */}
                   {searchResult.membership ? (
                     <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 border border-indigo-500/40 space-y-3">
                       <div className="flex items-center justify-between">
@@ -577,16 +638,16 @@ export default function POSCheckout() {
                           onClick={() => setShowUpgradePlans(!showUpgradePlans)}
                           className="text-amber-400 hover:text-amber-300 font-bold underline"
                         >
-                          {showUpgradePlans ? 'Hide' : 'Upgrade Plan'}
+                          {showUpgradePlans ? 'Close' : 'Switch Plan'}
                         </button>
                       </div>
 
-                      {/* Upgrade Plan Selector */}
+                      {/* Upgrade / Switch Plan Selector */}
                       {showUpgradePlans && plans.length > 0 && (
                         <div className="pt-2 border-t border-indigo-500/20 space-y-2">
-                          <span className="text-[11px] font-bold text-slate-300">Switch to another tier:</span>
+                          <span className="text-[11px] font-bold text-slate-300">Choose plan to switch:</span>
                           <div className="grid grid-cols-2 gap-2">
-                            {plans.filter(p => p.id !== searchResult.membership.plan_id).map((p) => (
+                            {plans.map((p) => (
                               <button
                                 key={p.id}
                                 type="button"
@@ -603,45 +664,77 @@ export default function POSCheckout() {
                       )}
                     </div>
                   ) : (
-                    /* Customer has NO active membership -> Show 1-Click VIP Pass Seller */
-                    <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/30 via-slate-950 to-indigo-950/30 border border-amber-500/40 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
-                          <Crown className="w-4 h-4 text-amber-400" />
+                    /* Customer has NO active membership -> Show Selectable Plans + BIG CONFIRM & SAVE BUTTON */
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-950/40 via-slate-950 to-indigo-950/40 border-2 border-amber-500/50 space-y-4 shadow-xl">
+                      <div className="flex items-center justify-between pb-2 border-b border-amber-500/20">
+                        <div className="flex items-center gap-2 text-sm font-black text-amber-300">
+                          <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />
                           <span>Sell VIP Membership Pass</span>
                         </div>
-                        <span className="text-[10px] font-black uppercase text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded-full">
-                          1-Click Join
+                        <span className="text-[11px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                          Select Plan & Confirm
                         </span>
                       </div>
                       
                       <p className="text-xs text-slate-300">
-                        This customer doesn't have an active VIP membership. Select a plan to enroll them instantly:
+                        కస్టమర్‌కు ఇవ్వాలనుకుంటున్న ప్లాన్ సెలెక్ట్ చేసి, కింద ఉన్న <strong>"Confirm & Save Plan"</strong> బటన్ కొట్టండి:
                       </p>
 
-                      <div className="space-y-2">
-                        {plans.map((p) => (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => handleQuickEnroll(searchResult.customer.phone, p.id, searchResult.customer.name)}
-                            disabled={enrollingVIP}
-                            className="w-full p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/40 hover:border-amber-400 text-left transition flex items-center justify-between group"
-                          >
-                            <div>
-                              <div className="font-bold text-white text-xs group-hover:text-amber-300">
-                                {p.plan_name}
+                      {/* Selectable Plans */}
+                      <div className="space-y-2.5">
+                        {plans.map((p) => {
+                          const isSelected = selectedPlanId === p.id || plans.length === 1;
+                          return (
+                            <div
+                              key={p.id}
+                              onClick={() => setSelectedPlanId(p.id)}
+                              className={`p-3.5 rounded-xl border-2 cursor-pointer transition flex items-center justify-between ${
+                                isSelected
+                                  ? 'bg-amber-500/20 border-amber-400 ring-2 ring-amber-400/40 shadow-md'
+                                  : 'bg-slate-900 border-slate-700 hover:border-slate-600'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                  isSelected ? 'border-amber-400 bg-amber-400 text-slate-950' : 'border-slate-500'
+                                }`}>
+                                  {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                                </div>
+                                <div>
+                                  <div className="font-black text-white text-sm">{p.plan_name}</div>
+                                  <div className="text-xs text-slate-400">
+                                    ₹{p.price || 0} • {p.validity_months || 12} months validity
+                                  </div>
+                                </div>
                               </div>
-                              <div className="text-[10px] text-slate-400">
-                                ₹{p.price || 0} • {p.validity_months || 12} months validity
+
+                              <div className="text-right shrink-0">
+                                <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-emerald-500 text-slate-950 shadow">
+                                  {p.discount_percent}% OFF
+                                </span>
+                                {isSelected && (
+                                  <div className="text-[10px] font-bold text-amber-300 mt-1">✓ Selected</div>
+                                )}
                               </div>
                             </div>
-                            <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-emerald-500 text-slate-950 shadow">
-                              {p.discount_percent}% OFF
-                            </span>
-                          </button>
-                        ))}
+                          );
+                        })}
                       </div>
+
+                      {/* THE BIG CONFIRM & SAVE BUTTON! */}
+                      <button
+                        type="button"
+                        onClick={() => handleQuickEnroll(searchResult.customer.phone, selectedPlanId, searchResult.customer.name)}
+                        disabled={enrollingVIP || !selectedPlanId}
+                        className="w-full py-4 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:brightness-110 text-slate-950 font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/30 transition disabled:opacity-50"
+                      >
+                        {enrollingVIP ? (
+                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-slate-950 border-t-transparent" />
+                        ) : (
+                          <CheckCircle className="w-5 h-5 stroke-[2.5]" />
+                        )}
+                        <span>✅ CONFIRM & SAVE VIP MEMBERSHIP (ఖరారు చేసి సేవ్ చేయండి)</span>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -649,26 +742,33 @@ export default function POSCheckout() {
 
               {/* POS Bill Calculator & Redemption (7 cols) */}
               <div className="lg:col-span-7 rounded-3xl bg-slate-900 border border-slate-800 p-6 space-y-5">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block pb-3 border-b border-slate-800">
-                  Step 2: Enter Bill & Apply Instant Discount
+                <span className="text-xs font-black uppercase tracking-wider text-slate-300 block pb-3 border-b border-slate-800 flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-slate-950 flex items-center justify-center text-[11px] font-mono font-bold">2</span>
+                  <span>Enter Bill Amount & Log Discount</span>
                 </span>
 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                      Gross Bill Amount (₹)
+                      Gross Bill Amount (₹) *
                     </label>
                     <div className="relative">
                       <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                       <input
+                        ref={billInputRef}
                         type="number"
                         step="0.01"
                         min="0"
                         value={billAmount}
                         onChange={(e) => setBillAmount(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && originalBill > 0) {
+                            e.preventDefault();
+                            handleRedeem();
+                          }
+                        }}
                         placeholder="0.00"
-                        className="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono text-xl font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        autoFocus
+                        className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       />
                     </div>
                   </div>
@@ -713,7 +813,7 @@ export default function POSCheckout() {
                       <span className="font-mono text-white font-medium">₹{originalBill.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm text-emerald-400 font-medium">
-                      <span>Loyalty Discount ({effectiveDiscountPercent}%):</span>
+                      <span>VIP Discount ({effectiveDiscountPercent}%):</span>
                       <span className="font-mono">-₹{discountAmount.toFixed(2)}</span>
                     </div>
                     <div className="pt-2 border-t border-slate-800 flex justify-between items-baseline">
@@ -736,7 +836,7 @@ export default function POSCheckout() {
                     ) : (
                       <Check className="w-5 h-5 stroke-[3]" />
                     )}
-                    <span>Complete Checkout & Log Redemption</span>
+                    <span>Complete Checkout & Print Receipt (Enter ↵)</span>
                   </button>
                 </div>
               </div>
@@ -748,16 +848,27 @@ export default function POSCheckout() {
       {/* TAB 2: DEDICATED SELL VIP MEMBERSHIP PASS */}
       {activeTab === 'sell_pass' && (
         <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-6">
-          <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
-              <Crown className="w-5 h-5" />
+          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <Crown className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-white">Sell & Activate VIP Membership Pass</h2>
+                <p className="text-xs text-slate-400">
+                  Enter customer number, choose membership tier, and hit Enter to issue their active VIP Pass.
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-black text-white">Sell & Activate VIP Membership Pass</h2>
-              <p className="text-xs text-slate-400">
-                Enter customer number, choose membership tier, and hit Enter to issue their active VIP Pass.
-              </p>
-            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowCreatePlanModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition shadow"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Create New Plan</span>
+            </button>
           </div>
 
           <form onSubmit={handleIssueVIPPass} className="space-y-6">
@@ -801,8 +912,15 @@ export default function POSCheckout() {
               </label>
 
               {plans.length === 0 ? (
-                <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
-                  No membership plans found. Please create plans in the Plans management section first.
+                <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400 space-y-2">
+                  <p>No membership plans found.</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreatePlanModal(true)}
+                    className="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold"
+                  >
+                    + Create First Plan
+                  </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -861,6 +979,113 @@ export default function POSCheckout() {
           </form>
         </div>
       )}
+
+      {/* CREATE NEW PLAN MODAL */}
+      <Modal
+        isOpen={showCreatePlanModal}
+        onClose={() => setShowCreatePlanModal(false)}
+        title="✨ Create New Membership Plan (కొత్త VIP ప్లాన్)"
+        maxWidth="max-w-md"
+      >
+        <form onSubmit={handleCreatePlan} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-300 mb-1">
+              Plan Name * (ఉదా: Gold VIP Pass, Weekend Saver)
+            </label>
+            <input
+              type="text"
+              required
+              value={newPlanName}
+              onChange={(e) => setNewPlanName(e.target.value)}
+              placeholder="e.g. Biryani VIP Pass"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              autoFocus
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">
+                Discount Percent (%) *
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  max="100"
+                  value={newPlanDiscount}
+                  onChange={(e) => setNewPlanDiscount(e.target.value)}
+                  placeholder="20"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono font-bold text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">
+                Pass Price (₹)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={newPlanPrice}
+                  onChange={(e) => setNewPlanPrice(e.target.value)}
+                  placeholder="199"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono font-bold text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-300 mb-1">
+              Validity in Months (చెల్లుబాటు కాలం)
+            </label>
+            <select
+              value={newPlanMonths}
+              onChange={(e) => setNewPlanMonths(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <option value="1">1 Month (1 నెల)</option>
+              <option value="3">3 Months (3 నెలలు)</option>
+              <option value="6">6 Months (6 నెలలు)</option>
+              <option value="12">12 Months (1 సంవత్సరం - Standard)</option>
+              <option value="24">24 Months (2 సంవత్సరాలు)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-300 mb-1">
+              Perks / Benefits Description
+            </label>
+            <input
+              type="text"
+              value={newPlanBenefits}
+              onChange={(e) => setNewPlanBenefits(e.target.value)}
+              placeholder="e.g. 20% discount on all orders + priority billing"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={creatingPlan || !newPlanName.trim()}
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition disabled:opacity-50"
+          >
+            {creatingPlan ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-950 border-t-transparent" />
+            ) : (
+              <CheckCircle className="w-4 h-4 stroke-[2.5]" />
+            )}
+            <span>✨ Save & Use Plan Now</span>
+          </button>
+        </form>
+      </Modal>
 
       {/* Success Receipt Modal */}
       <Modal
@@ -997,6 +1222,9 @@ export default function POSCheckout() {
                     customer: newVIPCard.customer,
                     membership: newVIPCard.membership
                   });
+                  setTimeout(() => {
+                    if (billInputRef.current) billInputRef.current.focus();
+                  }, 150);
                 }}
                 className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold transition"
               >

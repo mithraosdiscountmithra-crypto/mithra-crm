@@ -87,7 +87,63 @@ export const api = {
   // Fast POS cashier workflows
   pos: {
     verifyPhone: (phone) => request(`/pos/verify?phone=${encodeURIComponent(phone)}`),
-    quickEnrollVIP: (data) => request('/pos/quick-enroll', { method: 'POST', body: data }),
+    quickEnrollVIP: async (data) => {
+      try {
+        const res = await request('/pos/quick-enroll', { method: 'POST', body: data });
+        if (res && res.success) return res;
+      } catch (err) {
+        console.warn('POST /pos/quick-enroll failed, falling back to /memberships/assign:', err.message);
+      }
+
+      // Robust Fallback: If /pos/quick-enroll is still deploying on Render or 404s:
+      try {
+        let custId = data.customer_id || data.customerId;
+        let customerObj = null;
+
+        // If no customer_id, look up or create customer via /customers
+        if (!custId) {
+          const custRes = await request('/customers', {
+            method: 'POST',
+            body: { name: data.name || 'VIP Customer', phone: data.phone }
+          }).catch(async () => {
+            // If already exists, fetch from list
+            const allCust = await request('/customers');
+            return {
+              success: true,
+              customer: allCust.customers?.find(c => c.phone === data.phone)
+            };
+          });
+
+          if (custRes && custRes.customer) {
+            custId = custRes.customer.id;
+            customerObj = custRes.customer;
+          }
+        }
+
+        if (custId) {
+          const assignRes = await request('/memberships/assign', {
+            method: 'POST',
+            body: {
+              customer_id: custId,
+              plan_id: data.plan_id,
+              custom_validity_months: data.custom_validity_months
+            }
+          });
+
+          return {
+            success: true,
+            message: assignRes.message || `Successfully activated VIP Membership!`,
+            customer: customerObj || { id: custId, name: data.name, phone: data.phone },
+            membership: assignRes.membership
+          };
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback membership assign failed:', fallbackErr);
+        throw fallbackErr;
+      }
+
+      throw new Error('Unable to complete VIP enrollment. Please check server connection.');
+    },
     redeem: (redemptionData) => request('/pos/redeem', { method: 'POST', body: redemptionData }),
     getRedemptions: (limit = 50) => request(`/pos/redemptions?limit=${limit}`),
   },

@@ -6,12 +6,36 @@ import db from '../db/index.js';
 export const getPlans = async (req, res) => {
   try {
     const merchantId = req.merchantId;
-    const result = await db.query(
+    let result = await db.query(
       `SELECT * FROM membership_plans 
        WHERE merchant_id = $1 
        ORDER BY id ASC`,
       [merchantId]
     );
+
+    // If merchant has no plans configured yet, auto-create 3 standard starter plans so POS works immediately!
+    if (result.rows.length === 0) {
+      const defaultPlans = [
+        ['Silver Member', 99.00, 12, 10.00, '10% instant discount on all orders'],
+        ['Gold VIP Pass', 199.00, 12, 20.00, '20% VIP discount on all orders + priority billing'],
+        ['Platinum VIP Elite', 299.00, 12, 30.00, '30% Elite discount + special celebratory perks']
+      ];
+
+      for (const p of defaultPlans) {
+        await db.query(
+          `INSERT INTO membership_plans (merchant_id, plan_name, price, validity_months, discount_percent, benefits_description)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [merchantId, p[0], p[1], p[2], p[3], p[4]]
+        );
+      }
+
+      result = await db.query(
+        `SELECT * FROM membership_plans 
+         WHERE merchant_id = $1 
+         ORDER BY id ASC`,
+        [merchantId]
+      );
+    }
 
     return res.json({
       success: true,
