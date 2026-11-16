@@ -1,5 +1,5 @@
 import { register, login, getProfile } from './controllers/authController.js';
-import { getPlans, createPlan } from './controllers/plansController.js';
+import { getPlans, createPlan, updatePlan, deletePlan } from './controllers/plansController.js';
 import { getCustomers, createCustomer } from './controllers/customersController.js';
 import { verifyCustomerByPhone, processRedemption, quickEnrollVIP } from './controllers/posController.js';
 import { getDashboardStats } from './controllers/analyticsController.js';
@@ -123,6 +123,25 @@ async function runUnitTests() {
   const { req: plansReq, res: plansRes } = mockReqRes({ merchantId: 1 });
   await getPlans(plansReq, plansRes);
   console.log('2. Get Plans Test:', plansRes.body.plans?.length > 0 ? `PASSED (${plansRes.body.plans.length} plans)` : 'FAILED');
+
+  // 2b. Test Update & Delete Plan
+  const { req: updatePlanReq, res: updatePlanRes } = mockReqRes({
+    merchantId: 1,
+    params: { id: plansRes.body.plans[0].id },
+    body: {
+      plan_name: 'Coffee Club Premium Updated',
+      price: 149.00,
+      validity_months: 6,
+      discount_percent: 18.00,
+      benefits_description: '18% discount updated'
+    }
+  });
+  await updatePlan(updatePlanReq, updatePlanRes);
+  console.log('2b. Update Plan Test:', {
+    passed: updatePlanRes.body.success === true && updatePlanRes.body.plan?.plan_name === 'Coffee Club Premium Updated',
+    updatedPlan: updatePlanRes.body.plan?.plan_name,
+    discount: `${updatePlanRes.body.plan?.discount_percent}%`
+  });
 
   // 3. Test POS Phone Verification (Active Gold Member)
   const { req: posVerifyReq, res: posVerifyRes } = mockReqRes({

@@ -132,6 +132,12 @@ export const deletePlan = async (req, res) => {
     const merchantId = req.merchantId;
     const { id } = req.params;
 
+    // Unlink or clean up any customer memberships referencing this plan
+    await db.query(
+      'DELETE FROM customer_memberships WHERE plan_id = $1',
+      [id]
+    ).catch(() => {});
+
     const result = await db.query(
       'DELETE FROM membership_plans WHERE id = $1 AND merchant_id = $2',
       [id, merchantId]

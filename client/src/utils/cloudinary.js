@@ -16,9 +16,9 @@ export async function uploadToCloudinary(file) {
     return { success: false, error: 'No file selected.' };
   }
 
-  // Max 10MB file limit
-  if (file.size > 10 * 1024 * 1024) {
-    return { success: false, error: 'File size exceeds 10MB limit. Please choose a smaller image.' };
+  // Max 25MB file limit (supports raw mobile camera pictures)
+  if (file.size > 25 * 1024 * 1024) {
+    return { success: false, error: 'File size exceeds 25MB limit. Please choose a smaller image.' };
   }
 
   const cloudName = localStorage.getItem('cloudinary_cloud_name') || DEFAULT_CLOUD_NAME;
@@ -58,7 +58,7 @@ export async function uploadToCloudinary(file) {
 }
 
 /**
- * Convert file to compressed base64 data URL (max 600px dimension, ~40-60KB)
+ * Convert file to compressed base64 data URL (max 500px dimension, ~25-35KB)
  */
 function fileToOptimizedDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -69,8 +69,8 @@ function fileToOptimizedDataUrl(file) {
       img.onerror = reject;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 600;
-        const MAX_HEIGHT = 600;
+        const MAX_WIDTH = 500;
+        const MAX_HEIGHT = 500;
         let width = img.width;
         let height = img.height;
 
@@ -91,8 +91,8 @@ function fileToOptimizedDataUrl(file) {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-        // Compress as JPEG 0.70 quality for lightweight storage
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.70);
+        // Compress as JPEG 0.65 quality for ultra-fast and lightweight storage
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.65);
         resolve(compressedDataUrl);
       };
       img.src = e.target.result;

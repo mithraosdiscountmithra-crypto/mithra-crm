@@ -23,7 +23,10 @@ import {
   Plus, 
   ArrowRight,
   ShieldCheck,
-  CreditCard
+  CreditCard,
+  Edit3,
+  Trash2,
+  Settings
 } from 'lucide-react';
 
 export default function POSCheckout() {
@@ -46,8 +49,9 @@ export default function POSCheckout() {
   const [enrollingVIP, setEnrollingVIP] = useState(false);
   const [showUpgradePlans, setShowUpgradePlans] = useState(false);
 
-  // Create New Plan Modal state
+  // Create / Edit Plan Modal state
   const [showCreatePlanModal, setShowCreatePlanModal] = useState(false);
+  const [editingPlan, setEditingPlan] = useState(null);
   const [newPlanName, setNewPlanName] = useState('');
   const [newPlanPrice, setNewPlanPrice] = useState('199');
   const [newPlanDiscount, setNewPlanDiscount] = useState('20');
@@ -93,8 +97,27 @@ export default function POSCheckout() {
     }
   };
 
-  // Create New Plan on the fly
-  const handleCreatePlan = async (e) => {
+  const openCreatePlanModal = () => {
+    setEditingPlan(null);
+    setNewPlanName('');
+    setNewPlanPrice('199');
+    setNewPlanDiscount('20');
+    setNewPlanMonths('12');
+    setNewPlanBenefits('');
+    setShowCreatePlanModal(true);
+  };
+
+  const openEditPlanModal = (p) => {
+    setEditingPlan(p);
+    setNewPlanName(p.plan_name);
+    setNewPlanPrice(String(p.price || 0));
+    setNewPlanDiscount(String(p.discount_percent || 10));
+    setNewPlanMonths(String(p.validity_months || 12));
+    setNewPlanBenefits(p.benefits_description || '');
+    setShowCreatePlanModal(true);
+  };
+
+  const handleSavePlan = async (e) => {
     if (e) e.preventDefault();
     if (!newPlanName.trim()) {
       setError('Please provide a Plan Name.');
@@ -109,34 +132,61 @@ export default function POSCheckout() {
       setCreatingPlan(true);
       setError('');
 
-      const res = await api.plans.create({
+      const payload = {
         plan_name: newPlanName.trim(),
         price: parseFloat(newPlanPrice) || 0,
         discount_percent: parseFloat(newPlanDiscount) || 10,
         validity_months: parseInt(newPlanMonths, 10) || 12,
         benefits_description: newPlanBenefits.trim() || `${newPlanDiscount}% VIP discount on all orders`
-      });
+      };
 
-      if (res.success && res.plan) {
-        // Refresh plans
-        const updatedPlansRes = await api.plans.getAll();
-        if (updatedPlansRes.success) {
-          setPlans(updatedPlansRes.plans);
+      if (editingPlan) {
+        const res = await api.plans.update(editingPlan.id, payload);
+        if (res.success) {
+          setSuccessMsg(`🎉 Plan "${payload.plan_name}" updated successfully!`);
+        }
+      } else {
+        const res = await api.plans.create(payload);
+        if (res.success && res.plan) {
           setSelectedPlanId(res.plan.id);
           setPassPlanId(res.plan.id);
+          setSuccessMsg(`🎉 Plan "${res.plan.plan_name}" (${res.plan.discount_percent}% OFF) created & selected!`);
         }
-        setShowCreatePlanModal(false);
-        setNewPlanName('');
-        setNewPlanPrice('199');
-        setNewPlanDiscount('20');
-        setNewPlanMonths('12');
-        setNewPlanBenefits('');
-        setSuccessMsg(`🎉 Plan "${res.plan.plan_name}" (${res.plan.discount_percent}% OFF) created & selected!`);
       }
+
+      // Refresh plans
+      const updatedPlansRes = await api.plans.getAll();
+      if (updatedPlansRes.success) {
+        setPlans(updatedPlansRes.plans);
+      }
+      setShowCreatePlanModal(false);
+      setEditingPlan(null);
     } catch (err) {
-      setError(err.message || 'Failed to create plan');
+      setError(err.message || 'Failed to save plan');
     } finally {
       setCreatingPlan(false);
+    }
+  };
+
+  const handleDeletePlan = async (planId, planName) => {
+    if (!window.confirm(`Are you sure you want to delete "${planName}"? This plan will be permanently removed.`)) {
+      return;
+    }
+    try {
+      setError('');
+      const res = await api.plans.delete(planId);
+      if (res.success) {
+        setSuccessMsg(`🗑️ Plan "${planName}" deleted successfully!`);
+        const updated = await api.plans.getAll();
+        if (updated.success) {
+          setPlans(updated.plans);
+          if (selectedPlanId === planId && updated.plans.length > 0) {
+            setSelectedPlanId(updated.plans[0].id);
+          }
+        }
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to delete plan');
     }
   };
 
@@ -429,7 +479,7 @@ export default function POSCheckout() {
               {/* + Create New Plan Button right in header */}
               <button
                 type="button"
-                onClick={() => setShowCreatePlanModal(true)}
+                onClick={openCreatePlanModal}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition shadow"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -495,17 +545,16 @@ export default function POSCheckout() {
                 {plans.map((p) => {
                   const isSelected = selectedPlanId === p.id;
                   return (
-                    <button
+                    <div
                       key={p.id}
-                      type="button"
                       onClick={() => setSelectedPlanId(p.id)}
-                      className={`p-3 rounded-2xl border text-left transition flex items-center justify-between group ${
+                      className={`p-3 rounded-2xl border text-left transition flex items-center justify-between cursor-pointer group ${
                         isSelected
                           ? 'bg-gradient-to-r from-amber-500/25 via-slate-900 to-amber-950/30 border-amber-400 ring-2 ring-amber-400/50 shadow-lg shadow-amber-500/10'
                           : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'
                       }`}
                     >
-                      <div className="min-w-0 pr-2">
+                      <div className="min-w-0 pr-2 flex-1">
                         <div className="flex items-center gap-1.5">
                           <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-amber-400' : 'bg-slate-600'}`}></span>
                           <span className="font-extrabold text-white text-xs truncate">{p.plan_name}</span>
@@ -515,21 +564,49 @@ export default function POSCheckout() {
                         </div>
                       </div>
 
-                      <span className={`text-xs font-black px-2 py-1 rounded-lg shrink-0 ${
-                        isSelected 
-                          ? 'bg-amber-400 text-slate-950 shadow' 
-                          : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      }`}>
-                        {p.discount_percent}% OFF
-                      </span>
-                    </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className={`text-xs font-black px-2 py-1 rounded-lg ${
+                          isSelected 
+                            ? 'bg-amber-400 text-slate-950 shadow' 
+                            : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        }`}>
+                          {p.discount_percent}% OFF
+                        </span>
+
+                        {/* Edit Plan Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditPlanModal(p);
+                          }}
+                          className="p-1 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-slate-800 transition"
+                          title="Edit Plan (సవరించండి)"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Delete Plan Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePlan(p.id, p.plan_name);
+                          }}
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
+                          title="Delete Plan (తొలగించండి)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
 
                 {/* Inline Add New Plan Button inside Grid */}
                 <button
                   type="button"
-                  onClick={() => setShowCreatePlanModal(true)}
+                  onClick={openCreatePlanModal}
                   className="p-3 rounded-2xl border border-dashed border-slate-700 hover:border-amber-400/60 bg-slate-950 hover:bg-slate-900/40 text-slate-400 hover:text-amber-300 transition flex items-center justify-center gap-2 text-xs font-bold"
                 >
                   <Plus className="w-4 h-4 text-amber-400" />
@@ -863,7 +940,7 @@ export default function POSCheckout() {
 
             <button
               type="button"
-              onClick={() => setShowCreatePlanModal(true)}
+              onClick={openCreatePlanModal}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition shadow"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -916,7 +993,7 @@ export default function POSCheckout() {
                   <p>No membership plans found.</p>
                   <button
                     type="button"
-                    onClick={() => setShowCreatePlanModal(true)}
+                    onClick={openCreatePlanModal}
                     className="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold"
                   >
                     + Create First Plan
@@ -949,12 +1026,39 @@ export default function POSCheckout() {
                         </div>
 
                         <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between mt-3">
-                          <span className="text-lg font-black text-amber-400 font-mono">
-                            ₹{p.price || 0}
-                          </span>
-                          <span className="text-[11px] text-slate-400 font-medium">
-                            {p.validity_months || 12} Months
-                          </span>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-lg font-black text-amber-400 font-mono">
+                              ₹{p.price || 0}
+                            </span>
+                            <span className="text-[11px] text-slate-400 font-medium">
+                              • {p.validity_months || 12} mos
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditPlanModal(p);
+                              }}
+                              className="p-1 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-slate-800 transition"
+                              title="Edit Plan (సవరించండి)"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeletePlan(p.id, p.plan_name);
+                              }}
+                              className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
+                              title="Delete Plan (తొలగించండి)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -980,14 +1084,17 @@ export default function POSCheckout() {
         </div>
       )}
 
-      {/* CREATE NEW PLAN MODAL */}
+      {/* CREATE / EDIT PLAN MODAL */}
       <Modal
         isOpen={showCreatePlanModal}
-        onClose={() => setShowCreatePlanModal(false)}
-        title="✨ Create New Membership Plan (కొత్త VIP ప్లాన్)"
+        onClose={() => {
+          setShowCreatePlanModal(false);
+          setEditingPlan(null);
+        }}
+        title={editingPlan ? '✏️ Edit Membership Plan (ప్లాన్ సవరించండి)' : '✨ Create New Membership Plan (కొత్త VIP ప్లాన్)'}
         maxWidth="max-w-md"
       >
-        <form onSubmit={handleCreatePlan} className="space-y-4">
+        <form onSubmit={handleSavePlan} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-300 mb-1">
               Plan Name * (ఉదా: Gold VIP Pass, Weekend Saver)
@@ -1082,7 +1189,7 @@ export default function POSCheckout() {
             ) : (
               <CheckCircle className="w-4 h-4 stroke-[2.5]" />
             )}
-            <span>✨ Save & Use Plan Now</span>
+            <span>{editingPlan ? '💾 Update & Save Plan (మార్పులు సేవ్ చేయండి)' : '✨ Save & Use Plan Now'}</span>
           </button>
         </form>
       </Modal>
