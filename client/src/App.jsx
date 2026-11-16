@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import AICopilotDrawer from './components/AICopilotDrawer';
+import LiveOrderNotifier from './components/LiveOrderNotifier';
 
 // 7 Management Pillars Components
 import ExecutiveDashboard from './pages/ExecutiveDashboard';
@@ -68,6 +69,9 @@ export default function App() {
   // Main Merchant Portal & POS Shell
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+      {/* Live Order Chime Sound & Banner Notifier */}
+      <LiveOrderNotifier activeTab={activeTab} setActiveTab={setActiveTab} />
+
       {/* Top Bar */}
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
@@ -106,7 +110,8 @@ export default function App() {
           {activeTab === 'hr' && <HRPillar />}
 
           {/* Channels & Direct Views */}
-          {activeTab === 'storefront' && <CustomerStorefront />}
+          {activeTab === 'orders' && <CustomerStorefront initialSubView="orders" />}
+          {activeTab === 'storefront' && <CustomerStorefront initialSubView="store" />}
           {activeTab === 'pos' && <POSCheckout />}
           {activeTab === 'udhaar' && <DigitalKhata />}
           {activeTab === 'inventory' && <Inventory />}
@@ -178,6 +183,14 @@ export default function App() {
           }`}
         >
           👥 HR & Team
+        </button>
+        <button
+          onClick={() => setActiveTab('orders')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
+            activeTab === 'orders' ? 'bg-indigo-600 text-white' : 'text-slate-400'
+          }`}
+        >
+          📦 Orders
         </button>
         <button
           onClick={() => setActiveTab('storefront')}

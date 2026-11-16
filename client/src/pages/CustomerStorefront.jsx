@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { playOrderChime } from '../utils/sound';
 import { 
   Store, 
   ShoppingBag, 
@@ -31,15 +32,22 @@ import {
   BadgeAlert,
   Send,
   Eye,
-  ListOrdered
+  ListOrdered,
+  Volume2
 } from 'lucide-react';
 
-export default function CustomerStorefront() {
+export default function CustomerStorefront({ initialSubView = 'store' }) {
   const { merchant } = useAuth();
   const tenantId = merchant?.id || 1;
 
   // Active sub-view: 'store' (Live Customer Storefront) or 'orders' (Merchant Order Fulfillment)
-  const [subView, setSubView] = useState('store');
+  const [subView, setSubView] = useState(initialSubView);
+
+  useEffect(() => {
+    if (initialSubView) {
+      setSubView(initialSubView);
+    }
+  }, [initialSubView]);
 
   // Storefront Catalog & State
   const [loading, setLoading] = useState(true);
@@ -121,6 +129,8 @@ export default function CustomerStorefront() {
   useEffect(() => {
     if (subView === 'orders') {
       fetchMerchantOrders();
+      const interval = setInterval(fetchMerchantOrders, 6000);
+      return () => clearInterval(interval);
     }
   }, [subView]);
 
@@ -1131,13 +1141,24 @@ export default function CustomerStorefront() {
               ))}
             </div>
 
-            <button
-              onClick={fetchMerchantOrders}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 self-end sm:self-auto"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Refresh Orders</span>
-            </button>
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <button
+                onClick={playOrderChime}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-300 border border-amber-500/30 transition-all shadow-sm active:scale-95"
+                title="Test synthesized incoming order notification sound"
+              >
+                <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+                <span>Test Sound</span>
+              </button>
+
+              <button
+                onClick={fetchMerchantOrders}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Refresh Orders</span>
+              </button>
+            </div>
           </div>
 
           {/* Orders Table */}

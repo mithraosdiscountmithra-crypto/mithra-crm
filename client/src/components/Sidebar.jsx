@@ -3,6 +3,7 @@ import {
   Crown,
   Megaphone,
   ShoppingCart,
+  ShoppingBag,
   Package,
   FlaskConical,
   DollarSign,
@@ -28,7 +29,8 @@ export default function Sidebar({ activeTab, setActiveTab, currentRole = 'Owner 
   ];
 
   const channels = [
-    { id: 'storefront', label: 'Online Storefront', icon: Store, badge: 'Live' },
+    { id: 'orders', label: 'Live Store Orders', icon: ShoppingBag, badge: 'Live Feed' },
+    { id: 'storefront', label: 'Customer Storefront', icon: Store, badge: 'Catalog' },
     { id: 'settings', label: 'Store Settings', icon: Settings },
   ];
 
