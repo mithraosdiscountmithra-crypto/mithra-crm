@@ -58,3 +58,8 @@ export const authenticateMerchant = async (req, res, next) => {
     });
   }
 };
+
+// Aliases for route consistency
+export const requireAuth = authenticateMerchant;
+export default authenticateMerchant;
+
