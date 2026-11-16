@@ -1,7 +1,7 @@
 import { register, login, getProfile } from './controllers/authController.js';
 import { getPlans, createPlan } from './controllers/plansController.js';
 import { getCustomers, createCustomer } from './controllers/customersController.js';
-import { verifyCustomerByPhone, processRedemption } from './controllers/posController.js';
+import { verifyCustomerByPhone, processRedemption, quickEnrollVIP } from './controllers/posController.js';
 import { getDashboardStats } from './controllers/analyticsController.js';
 import { 
   getProducts, 
@@ -149,6 +149,23 @@ async function runUnitTests() {
     bill: `$${redeemRes.body.receipt?.bill_amount}`,
     discountGiven: `-$${redeemRes.body.receipt?.discount_given}`,
     netPayable: `$${redeemRes.body.receipt?.net_payable}`
+  });
+
+  // 4b. Test 1-Click Fast VIP Enrollment in POS
+  const { req: quickVipReq, res: quickVipRes } = mockReqRes({
+    merchantId: 1,
+    body: {
+      phone: '9988776655',
+      name: 'Ravi Kumar',
+      plan_id: plansRes.body.plans[0].id
+    }
+  });
+  await quickEnrollVIP(quickVipReq, quickVipRes);
+  console.log('4b. POS 1-Click Quick VIP Enroll:', {
+    passed: quickVipRes.body.success === true && quickVipRes.body.membership?.plan_name !== undefined,
+    customer: quickVipRes.body.customer?.name,
+    plan: quickVipRes.body.membership?.plan_name,
+    discount: `${quickVipRes.body.membership?.discount_percent}%`
   });
 
   // 5. Test Analytics Dashboard

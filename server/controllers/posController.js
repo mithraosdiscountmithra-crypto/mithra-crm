@@ -250,3 +250,106 @@ export const getRedemptions = async (req, res) => {
     return res.status(500).json({ success: false, error: err.message });
   }
 };
+
+/**
+ * 1-Step Quick Enroll VIP Member by Phone & Plan ID
+ * Auto-creates customer if not exists, assigns active membership, and returns verified member profile
+ */
+export const quickEnrollVIP = async (req, res) => {
+  try {
+    const merchantId = req.merchantId;
+    const { phone, name, plan_id, custom_validity_months } = req.body;
+
+    if (!phone || !plan_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Both phone number and VIP membership plan are required.'
+      });
+    }
+
+    const cleanPhone = String(phone).trim();
+    const cleanName = (name && String(name).trim()) || 'VIP Customer';
+
+    // 1. Verify plan exists and belongs to this merchant
+    const planRes = await db.query(
+      'SELECT id, plan_name, validity_months, discount_percent, benefits_description FROM membership_plans WHERE id = $1 AND merchant_id = $2',
+      [plan_id, merchantId]
+    );
+
+    if (planRes.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Selected VIP membership plan not found.'
+      });
+    }
+
+    const plan = planRes.rows[0];
+
+    // 2. Find or Create Customer
+    let customer;
+    const existingCust = await db.query(
+      'SELECT id, name, phone FROM customers WHERE merchant_id = $1 AND phone = $2',
+      [merchantId, cleanPhone]
+    );
+
+    if (existingCust.rows.length > 0) {
+      customer = existingCust.rows[0];
+      if (name && name.trim() && customer.name === 'VIP Customer') {
+        await db.query('UPDATE customers SET name = $1 WHERE id = $2', [name.trim(), customer.id]);
+        customer.name = name.trim();
+      }
+    } else {
+      const newCustRes = await db.query(
+        'INSERT INTO customers (merchant_id, name, phone) VALUES ($1, $2, $3) RETURNING *',
+        [merchantId, cleanName, cleanPhone]
+      );
+      customer = newCustRes.rows[0];
+    }
+
+    // 3. Deactivate any prior active memberships
+    await db.query(
+      `UPDATE customer_memberships 
+       SET status = 'EXPIRED' 
+       WHERE customer_id = $1 AND status = 'ACTIVE'`,
+      [customer.id]
+    );
+
+    // 4. Calculate validity dates
+    const months = custom_validity_months ? parseInt(custom_validity_months, 10) : (plan.validity_months || 12);
+    const startDate = new Date();
+    const expiryDate = new Date();
+    expiryDate.setMonth(expiryDate.getMonth() + months);
+
+    const memRes = await db.query(
+      `INSERT INTO customer_memberships (customer_id, plan_id, start_date, expiry_date, status)
+       VALUES ($1, $2, $3, $4, 'ACTIVE')
+       RETURNING *`,
+      [
+        customer.id,
+        plan.id,
+        startDate.toISOString().split('T')[0],
+        expiryDate.toISOString().split('T')[0]
+      ]
+    );
+
+    const membership = memRes.rows[0];
+
+    return res.status(201).json({
+      success: true,
+      message: `🎉 Successfully enrolled ${customer.name} into ${plan.plan_name} (${plan.discount_percent}% OFF)!`,
+      customer,
+      membership: {
+        id: membership.id,
+        plan_id: plan.id,
+        plan_name: plan.plan_name,
+        discount_percent: plan.discount_percent,
+        benefits_description: plan.benefits_description,
+        expiry_date: membership.expiry_date,
+        status: 'ACTIVE'
+      }
+    });
+  } catch (err) {
+    console.error('[Quick Enroll VIP Error]:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};

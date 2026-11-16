@@ -87,6 +87,7 @@ export const api = {
   // Fast POS cashier workflows
   pos: {
     verifyPhone: (phone) => request(`/pos/verify?phone=${encodeURIComponent(phone)}`),
+    quickEnrollVIP: (data) => request('/pos/quick-enroll', { method: 'POST', body: data }),
     redeem: (redemptionData) => request('/pos/redeem', { method: 'POST', body: redemptionData }),
     getRedemptions: (limit = 50) => request(`/pos/redemptions?limit=${limit}`),
   },
