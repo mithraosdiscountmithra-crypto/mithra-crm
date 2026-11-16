@@ -1,4 +1,13 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+function getApiBase() {
+  let base = (import.meta.env.VITE_API_BASE_URL || '/api').trim();
+  base = base.replace(/\/+$/, '');
+  if (base.startsWith('http') && !base.endsWith('/api')) {
+    base = `${base}/api`;
+  }
+  return base;
+}
+
+const API_BASE = getApiBase();
 
 /**
  * Universal API fetcher that automatically attaches JWT token
@@ -24,7 +33,10 @@ async function request(endpoint, options = {}) {
   }
 
   const response = await fetch(`${API_BASE}${endpoint}`, config);
-  const data = await response.json().catch(() => ({ success: false, error: 'Network response was not JSON' }));
+  const data = await response.json().catch(() => ({ 
+    success: false, 
+    error: `Cannot connect to Backend API (Status ${response.status}). Please check VITE_API_BASE_URL on Vercel.` 
+  }));
 
   if (!response.ok) {
     const errorMsg = data.error || data.message || `Request failed with status ${response.status}`;
