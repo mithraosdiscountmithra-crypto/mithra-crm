@@ -33,7 +33,12 @@ import {
   Send,
   Eye,
   ListOrdered,
-  Volume2
+  Volume2,
+  Camera,
+  UtensilsCrossed,
+  Banknote,
+  PlusCircle,
+  Image as ImageIcon
 } from 'lucide-react';
 
 export default function CustomerStorefront({ initialSubView = 'store' }) {
@@ -72,11 +77,34 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
-  const [orderType, setOrderType] = useState('delivery'); // 'delivery' or 'pickup'
-  const [paymentMode, setPaymentMode] = useState('online'); // 'online' or 'khata'
+  const [orderType, setOrderType] = useState('delivery'); // 'delivery', 'pickup', or 'dine_in'
+  const [tableNumber, setTableNumber] = useState(''); // Table number for dine-in
+  const [guestsCount, setGuestsCount] = useState('2'); // Number of guests
+  const [paymentMode, setPaymentMode] = useState('online'); // 'online', 'cash', or 'khata'
   const [orderNotes, setOrderNotes] = useState('');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderSuccessData, setOrderSuccessData] = useState(null);
+
+  // Vendor Add Menu Item Modal State
+  const [isAddMenuModalOpen, setIsAddMenuModalOpen] = useState(false);
+  const [menuForm, setMenuForm] = useState({
+    product_name: '',
+    category: 'Beverages',
+    selling_price: '',
+    stock_quantity: '50',
+    unit: 'pcs',
+    is_veg: true,
+    description: ''
+  });
+  const [isSavingMenu, setIsSavingMenu] = useState(false);
+
+  // Vendor Shop Photo & Banner Modal State
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [photoForm, setPhotoForm] = useState({
+    banner_url: '',
+    photo_url: ''
+  });
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
 
   // Merchant Orders Management State
   const [merchantOrders, setMerchantOrders] = useState([]);
@@ -93,6 +121,10 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
       const res = await api.customer.getProducts(tenantId);
       if (res.success) {
         setStoreInfo(res.merchant);
+        setPhotoForm({
+          banner_url: res.merchant?.banner_url || '',
+          photo_url: res.merchant?.photo_url || ''
+        });
         setProducts(res.products || []);
         setCategories(res.categories || ['All']);
       } else {
@@ -103,6 +135,78 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
       setError(err.message || 'Error connecting to storefront server.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Add New Menu Item Handler
+  const handleSaveMenuItem = async (e) => {
+    e.preventDefault();
+    if (!menuForm.product_name.trim()) {
+      alert('Please enter a dish or product name.');
+      return;
+    }
+    if (!menuForm.selling_price || parseFloat(menuForm.selling_price) <= 0) {
+      alert('Please enter a valid selling price.');
+      return;
+    }
+    try {
+      setIsSavingMenu(true);
+      const res = await api.products.create({
+        product_name: menuForm.product_name.trim(),
+        category: menuForm.category,
+        selling_price: parseFloat(menuForm.selling_price),
+        purchase_price: parseFloat(menuForm.selling_price) * 0.6,
+        stock_quantity: parseInt(menuForm.stock_quantity, 10) || 50,
+        low_stock_threshold: 5,
+        unit: menuForm.unit || 'pcs'
+      });
+      if (res.success) {
+        alert(`✅ Dish "${menuForm.product_name}" added to menu successfully!`);
+        setIsAddMenuModalOpen(false);
+        setMenuForm({
+          product_name: '',
+          category: 'Beverages',
+          selling_price: '',
+          stock_quantity: '50',
+          unit: 'pcs',
+          is_veg: true,
+          description: ''
+        });
+        fetchCatalog();
+      } else {
+        alert(res.error || 'Failed to add menu item');
+      }
+    } catch (err) {
+      alert(err.message || 'Error creating menu item');
+    } finally {
+      setIsSavingMenu(false);
+    }
+  };
+
+  // Update Shop Photo & Banner Handler
+  const handleSaveShopPhoto = async (e) => {
+    e.preventDefault();
+    try {
+      setIsSavingPhoto(true);
+      const res = await api.auth.updateProfile({
+        banner_url: photoForm.banner_url,
+        photo_url: photoForm.photo_url
+      });
+      if (res.success) {
+        setStoreInfo(prev => ({
+          ...prev,
+          banner_url: photoForm.banner_url || prev?.banner_url,
+          photo_url: photoForm.photo_url || prev?.photo_url
+        }));
+        alert('✅ Shop photo and storefront banner updated successfully!');
+        setIsPhotoModalOpen(false);
+      } else {
+        alert(res.error || 'Failed to update shop photo');
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to update shop photo');
+    } finally {
+      setIsSavingPhoto(false);
     }
   };
 
@@ -244,6 +348,10 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
       alert('Please provide your delivery address.');
       return;
     }
+    if (orderType === 'dine_in' && !tableNumber.trim()) {
+      alert('Please enter your Table Number (e.g. Table 4) for Dine-in orders.');
+      return;
+    }
 
     try {
       setIsSubmittingOrder(true);
@@ -253,6 +361,8 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
         customer_phone: customerPhone.trim(),
         customer_address: orderType === 'delivery' ? customerAddress.trim() : '',
         order_type: orderType,
+        table_number: orderType === 'dine_in' ? tableNumber.trim() : '',
+        guests_count: orderType === 'dine_in' ? guestsCount : '',
         payment_mode: paymentMode,
         membership_phone: membershipPhone ? membershipPhone.trim() : customerPhone.trim(),
         notes: orderNotes.trim(),
@@ -338,35 +448,63 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
           </p>
         </div>
 
-        {/* View Switcher Pills */}
-        <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800 self-start md:self-auto">
+        {/* Action Controls & View Switcher */}
+        <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+          {/* Quick Vendor Management Actions */}
           <button
-            onClick={() => setSubView('store')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
-              subView === 'store'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+            onClick={() => setIsAddMenuModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all shadow-sm active:scale-95"
+            title="Add a new dish or product to your storefront menu"
           >
-            <Eye className="w-4 h-4" />
-            <span>Customer Storefront</span>
+            <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
+            <span>+ Add Menu Item</span>
           </button>
+
           <button
-            onClick={() => setSubView('orders')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
-              subView === 'orders'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+            onClick={() => {
+              setPhotoForm({
+                banner_url: storeInfo?.banner_url || '',
+                photo_url: storeInfo?.photo_url || ''
+              });
+              setIsPhotoModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition-all shadow-sm active:scale-95"
+            title="Change storefront cover banner and store facade photo"
           >
-            <ListOrdered className="w-4 h-4" />
-            <span>Incoming Orders</span>
-            {merchantOrdersSummary?.pendingOrders > 0 && (
-              <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center">
-                {merchantOrdersSummary.pendingOrders}
-              </span>
-            )}
+            <Camera className="w-3.5 h-3.5 text-indigo-400" />
+            <span>📸 Change Shop Photo</span>
           </button>
+
+          {/* View Switcher Pills */}
+          <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+            <button
+              onClick={() => setSubView('store')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                subView === 'store'
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Eye className="w-4 h-4" />
+              <span>Customer Storefront</span>
+            </button>
+            <button
+              onClick={() => setSubView('orders')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                subView === 'orders'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <ListOrdered className="w-4 h-4" />
+              <span>Incoming Orders</span>
+              {merchantOrdersSummary?.pendingOrders > 0 && (
+                <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center">
+                  {merchantOrdersSummary.pendingOrders}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -378,19 +516,61 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
           {/* Main Catalog Column (8 cols on desktop) */}
           <div className="lg:col-span-8 space-y-5">
             {/* Storefront Hero Banner & VIP Phone Checker */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-950/70 via-slate-900 to-indigo-950/60 p-5 sm:p-6 border border-emerald-500/20 shadow-xl">
-              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
-                <div className="space-y-1.5">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-300 text-xs font-bold">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Mithra Plus VIP Loyalty Store</span>
+            <div className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl">
+              {/* Background Shop Banner Cover Image */}
+              {storeInfo?.banner_url && (
+                <div className="h-36 sm:h-44 w-full overflow-hidden relative">
+                  <img
+                    src={storeInfo.banner_url}
+                    alt={storeInfo?.store_name}
+                    className="w-full h-full object-cover brightness-75 hover:scale-105 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+                  <button
+                    onClick={() => {
+                      setPhotoForm({
+                        banner_url: storeInfo?.banner_url || '',
+                        photo_url: storeInfo?.photo_url || ''
+                      });
+                      setIsPhotoModalOpen(true);
+                    }}
+                    className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-slate-950/80 backdrop-blur-md text-[11px] font-bold text-white border border-slate-700 flex items-center gap-1.5 hover:bg-slate-900 transition-colors shadow-lg"
+                  >
+                    <Camera className="w-3 h-3 text-amber-400" />
+                    <span>Edit Banner</span>
+                  </button>
+                </div>
+              )}
+
+              <div className="relative p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                <div className="flex items-center gap-4">
+                  {/* Store Facade / Profile Photo Badge */}
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-950 border-2 border-amber-400/60 overflow-hidden shadow-2xl shrink-0">
+                    {storeInfo?.photo_url ? (
+                      <img
+                        src={storeInfo.photo_url}
+                        alt="Shop Facade"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-amber-500 to-indigo-600 text-white font-black text-2xl">
+                        {storeInfo?.store_name?.[0] || '🏪'}
+                      </div>
+                    )}
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-black text-white">
-                    Order Directly from {storeInfo?.store_name || 'Store'}
-                  </h2>
-                  <p className="text-xs text-slate-300 max-w-md">
-                    Instant delivery & store pickup. Active members get exclusive VIP discounts deducted automatically at checkout!
-                  </p>
+
+                  <div className="space-y-1">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-300 text-xs font-bold">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Mithra Plus VIP Loyalty Store</span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-black text-white">
+                      {storeInfo?.store_name || 'Store'}
+                    </h2>
+                    <p className="text-xs text-slate-300 max-w-md">
+                      {storeInfo?.address ? `📍 ${storeInfo.address}, ${storeInfo.city || ''}` : 'Instant delivery, store pickup & dine-in table ordering.'}
+                    </p>
+                  </div>
                 </div>
 
                 {/* VIP Verification Card */}
@@ -678,12 +858,12 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
               {/* Checkout Form */}
               {cartItems.length > 0 && (
                 <form onSubmit={handlePlaceOrder} className="space-y-4 pt-3 border-t border-slate-800">
-                  {/* Delivery vs Pickup Selector */}
-                  <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                  {/* Delivery vs Pickup vs Dine-In Selector */}
+                  <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
                     <button
                       type="button"
                       onClick={() => setOrderType('delivery')}
-                      className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
                         orderType === 'delivery'
                           ? 'bg-emerald-600 text-white shadow-sm'
                           : 'text-slate-400 hover:text-slate-200'
@@ -695,7 +875,7 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
                     <button
                       type="button"
                       onClick={() => setOrderType('pickup')}
-                      className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
                         orderType === 'pickup'
                           ? 'bg-emerald-600 text-white shadow-sm'
                           : 'text-slate-400 hover:text-slate-200'
@@ -704,7 +884,60 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
                       <Store className="w-3.5 h-3.5" />
                       <span>Pickup</span>
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setOrderType('dine_in')}
+                      className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        orderType === 'dine_in'
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <UtensilsCrossed className="w-3.5 h-3.5" />
+                      <span>Dine-In</span>
+                    </button>
                   </div>
+
+                  {/* Dine-In Table Booking Form */}
+                  {orderType === 'dine_in' && (
+                    <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/25 space-y-2">
+                      <div className="flex items-center justify-between text-xs font-bold text-purple-300">
+                        <span className="flex items-center gap-1.5">
+                          <UtensilsCrossed className="w-3.5 h-3.5 text-purple-400" />
+                          Table Booking
+                        </span>
+                        <span className="text-[10px] text-purple-400/80">Dine-in Order</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-300 block mb-1">Table Number *</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Table 4"
+                            required
+                            value={tableNumber}
+                            onChange={(e) => setTableNumber(e.target.value)}
+                            className="w-full bg-slate-950 border border-purple-500/30 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-300 block mb-1">Number of Guests</label>
+                          <select
+                            value={guestsCount}
+                            onChange={(e) => setGuestsCount(e.target.value)}
+                            className="w-full bg-slate-950 border border-purple-500/30 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-purple-400 cursor-pointer"
+                          >
+                            <option value="1">1 Guest</option>
+                            <option value="2">2 Guests</option>
+                            <option value="3">3 Guests</option>
+                            <option value="4">4 Guests</option>
+                            <option value="5">5 Guests</option>
+                            <option value="6+">6+ Guests</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Customer Details */}
                   <div className="space-y-2.5">
@@ -747,40 +980,58 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
                     )}
                   </div>
 
-                  {/* Payment Mode Selector: Online / UPI vs Digital Khata */}
+                  {/* Payment Mode Selector: Online / UPI vs Cash on Delivery / Counter vs Digital Khata */}
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 block">Payment Mode</label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-1.5">
                       <button
                         type="button"
                         onClick={() => setPaymentMode('online')}
-                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                        className={`p-2 rounded-xl border text-left transition-all ${
                           paymentMode === 'online'
-                            ? 'bg-emerald-500/10 border-emerald-500 text-white'
+                            ? 'bg-emerald-500/10 border-emerald-500 text-white shadow-sm'
                             : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                         }`}
                       >
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 mb-0.5">
-                          <CreditCard className="w-3.5 h-3.5" />
-                          <span>Online / UPI</span>
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 mb-0.5">
+                          <CreditCard className="w-3 h-3" />
+                          <span>Online/UPI</span>
                         </div>
-                        <p className="text-[10px] text-slate-400">Instant UPI QR / Netbanking</p>
+                        <p className="text-[9px] text-slate-400">Instant QR</p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMode('cash')}
+                        className={`p-2 rounded-xl border text-left transition-all ${
+                          paymentMode === 'cash'
+                            ? 'bg-amber-500/15 border-amber-500 text-white shadow-sm'
+                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-amber-400 mb-0.5">
+                          <Banknote className="w-3 h-3" />
+                          <span>{orderType === 'delivery' ? 'Cash on Del.' : 'Cash Pay'}</span>
+                        </div>
+                        <p className="text-[9px] text-slate-400">
+                          {orderType === 'delivery' ? 'COD at Door' : 'Pay at Counter'}
+                        </p>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setPaymentMode('khata')}
-                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                        className={`p-2 rounded-xl border text-left transition-all ${
                           paymentMode === 'khata'
-                            ? 'bg-amber-500/10 border-amber-500 text-white'
+                            ? 'bg-indigo-500/10 border-indigo-500 text-white shadow-sm'
                             : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                         }`}
                       >
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 mb-0.5">
-                          <BookOpen className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-indigo-400 mb-0.5">
+                          <BookOpen className="w-3 h-3" />
                           <span>Pay Later</span>
                         </div>
-                        <p className="text-[10px] text-slate-400">Digital Khata Ledger (7 Days)</p>
+                        <p className="text-[9px] text-slate-400">Khata (7d)</p>
                       </button>
                     </div>
                   </div>
@@ -906,12 +1157,12 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
 
             {/* Mobile Form Details */}
             <form onSubmit={handlePlaceOrder} className="space-y-3.5">
-              <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
+              <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
                 <button
                   type="button"
                   onClick={() => setOrderType('delivery')}
-                  className={`py-1.5 rounded-lg text-xs font-bold ${
-                    orderType === 'delivery' ? 'bg-emerald-600 text-white' : 'text-slate-400'
+                  className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    orderType === 'delivery' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400'
                   }`}
                 >
                   Delivery
@@ -919,13 +1170,63 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
                 <button
                   type="button"
                   onClick={() => setOrderType('pickup')}
-                  className={`py-1.5 rounded-lg text-xs font-bold ${
-                    orderType === 'pickup' ? 'bg-emerald-600 text-white' : 'text-slate-400'
+                  className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    orderType === 'pickup' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400'
                   }`}
                 >
                   Pickup
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setOrderType('dine_in')}
+                  className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    orderType === 'dine_in' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400'
+                  }`}
+                >
+                  🍽️ Dine-In
+                </button>
               </div>
+
+              {/* Mobile Dine-In Table Booking Form */}
+              {orderType === 'dine_in' && (
+                <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/25 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-purple-300">
+                    <span className="flex items-center gap-1.5">
+                      <UtensilsCrossed className="w-3.5 h-3.5 text-purple-400" />
+                      Table Booking
+                    </span>
+                    <span className="text-[10px] text-purple-400/80">Dine-in Order</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-300 block mb-1">Table Number *</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Table 4"
+                        required
+                        value={tableNumber}
+                        onChange={(e) => setTableNumber(e.target.value)}
+                        className="w-full bg-slate-950 border border-purple-500/30 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-300 block mb-1">Guests</label>
+                      <select
+                        value={guestsCount}
+                        onChange={(e) => setGuestsCount(e.target.value)}
+                        className="w-full bg-slate-950 border border-purple-500/30 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-purple-400 cursor-pointer"
+                      >
+                        <option value="1">1 Guest</option>
+                        <option value="2">2 Guests</option>
+                        <option value="3">3 Guests</option>
+                        <option value="4">4 Guests</option>
+                        <option value="5">5 Guests</option>
+                        <option value="6+">6+ Guests</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <input
@@ -962,25 +1263,37 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
                 </div>
               )}
 
-              {/* Payment selector */}
-              <div className="grid grid-cols-2 gap-2">
+              {/* Payment selector: Online, Cash on Del/Counter, Pay Later Khata */}
+              <div className="grid grid-cols-3 gap-1.5">
                 <button
                   type="button"
                   onClick={() => setPaymentMode('online')}
-                  className={`p-2 rounded-xl border text-xs font-bold text-center ${
+                  className={`p-2 rounded-xl border text-xs font-bold text-center transition-all ${
                     paymentMode === 'online' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-400'
                   }`}
                 >
-                  Online / UPI
+                  <CreditCard className="w-3.5 h-3.5 mx-auto mb-0.5" />
+                  <span className="block text-[10px]">UPI/Online</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMode('cash')}
+                  className={`p-2 rounded-xl border text-xs font-bold text-center transition-all ${
+                    paymentMode === 'cash' ? 'bg-amber-500/15 border-amber-500 text-amber-300' : 'bg-slate-950 border-slate-800 text-slate-400'
+                  }`}
+                >
+                  <Banknote className="w-3.5 h-3.5 mx-auto mb-0.5" />
+                  <span className="block text-[10px]">{orderType === 'delivery' ? 'COD' : 'Cash Pay'}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMode('khata')}
-                  className={`p-2 rounded-xl border text-xs font-bold text-center ${
-                    paymentMode === 'khata' ? 'bg-amber-500/10 border-amber-500 text-amber-400' : 'bg-slate-950 border-slate-800 text-slate-400'
+                  className={`p-2 rounded-xl border text-xs font-bold text-center transition-all ${
+                    paymentMode === 'khata' ? 'bg-indigo-500/10 border-indigo-500 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'
                   }`}
                 >
-                  Pay Later (Khata)
+                  <BookOpen className="w-3.5 h-3.5 mx-auto mb-0.5" />
+                  <span className="block text-[10px]">Khata</span>
                 </button>
               </div>
 
@@ -1047,15 +1360,33 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
                 <span className="font-semibold text-white">{orderSuccessData.order?.customer_name}</span>
               </div>
               <div className="flex justify-between text-slate-400">
-                <span>Type</span>
-                <span className="font-semibold text-white uppercase">{orderSuccessData.order?.order_type}</span>
+                <span>Fulfillment Mode</span>
+                <span className="font-semibold text-white uppercase flex items-center gap-1">
+                  {orderSuccessData.order?.order_type === 'dine_in' ? (
+                    <span className="text-purple-400 font-bold">
+                      🍽️ Dine-In {orderSuccessData.order?.table_number ? `(Table #${orderSuccessData.order.table_number})` : ''}
+                    </span>
+                  ) : orderSuccessData.order?.order_type === 'pickup' ? (
+                    '🏪 In-Store Pickup'
+                  ) : (
+                    '🚚 Home Delivery'
+                  )}
+                </span>
               </div>
               <div className="flex justify-between text-slate-400">
                 <span>Payment Mode</span>
                 <span className={`font-bold ${
-                  orderSuccessData.order?.payment_mode === 'khata' ? 'text-amber-400' : 'text-emerald-400'
+                  orderSuccessData.order?.payment_mode === 'cash' || orderSuccessData.order?.payment_mode === 'cod'
+                    ? 'text-amber-400'
+                    : orderSuccessData.order?.payment_mode === 'khata'
+                    ? 'text-indigo-400'
+                    : 'text-emerald-400'
                 }`}>
-                  {orderSuccessData.order?.payment_mode === 'khata' ? 'Pay Later (Khata Ledger)' : 'Paid Online / UPI'}
+                  {orderSuccessData.order?.payment_mode === 'cash' || orderSuccessData.order?.payment_mode === 'cod'
+                    ? (orderSuccessData.order?.order_type === 'delivery' ? '💵 Cash on Delivery (COD)' : '💵 Cash at Counter/Table')
+                    : orderSuccessData.order?.payment_mode === 'khata'
+                    ? 'Pay Later (Khata Ledger)'
+                    : 'Paid Online / UPI'}
                 </span>
               </div>
 
@@ -1184,7 +1515,7 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-black text-white">{order.order_number}</span>
                           <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${
                             order.status === 'COMPLETED'
@@ -1197,12 +1528,25 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
                           }`}>
                             {order.status.replace(/_/g, ' ')}
                           </span>
+
+                          {/* Dine-In Table Badge */}
+                          {(order.order_type === 'dine_in' || order.notes?.includes('[Dine-In')) && (
+                            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1 shadow-sm">
+                              🍽️ {order.table_number ? `Table #${order.table_number}` : (order.notes?.match(/Table #([^\] -]+)/)?.[0] || 'Dine-In Table')}
+                            </span>
+                          )}
+
+                          {/* Payment Badge (Cash on Delivery / UPI / Khata) */}
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                            order.payment_mode === 'khata'
-                              ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                            order.payment_mode === 'cash' || order.payment_mode === 'cod' || order.notes?.includes('[Cash on Delivery') || order.notes?.includes('[Pay Cash')
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              : order.payment_mode === 'khata'
+                              ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30'
                               : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
                           }`}>
-                            {order.payment_mode === 'khata' ? 'Digital Khata' : 'Online / UPI'}
+                            {order.payment_mode === 'cash' || order.payment_mode === 'cod' || order.notes?.includes('[Cash on Delivery') || order.notes?.includes('[Pay Cash')
+                              ? (order.order_type === 'delivery' ? '💵 Cash on Delivery (COD)' : '💵 Cash at Counter/Table')
+                              : order.payment_mode === 'khata' ? 'Digital Khata' : 'Online / UPI'}
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-400 mt-0.5">
@@ -1296,6 +1640,305 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 1: VENDOR ADD NEW MENU ITEM */}
+      {/* ========================================================================= */}
+      {isAddMenuModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-amber-500/30 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
+            <button
+              onClick={() => setIsAddMenuModalOpen(false)}
+              className="absolute right-4 top-4 text-slate-500 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <UtensilsCrossed className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-white">Add New Menu Item</h3>
+                <p className="text-xs text-slate-400">Instantly publish dishes or products to your digital storefront</p>
+              </div>
+            </div>
+
+            {/* Quick 1-Click Dish Presets */}
+            <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">
+                ⚡ Quick 1-Click Presets:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { name: 'Chicken Dum Biryani', cat: 'Main Course', price: '280', veg: false },
+                  { name: 'Special Cappuccino', cat: 'Beverages', price: '160', veg: true },
+                  { name: 'Paneer Butter Masala', cat: 'Main Course', price: '240', veg: true },
+                  { name: 'Crispy Masala Dosa', cat: 'Fast Food', price: '90', veg: true },
+                  { name: 'Chocolate Brownie', cat: 'Desserts', price: '140', veg: true },
+                  { name: 'Fresh Mango Smoothie', cat: 'Beverages', price: '120', veg: true },
+                ].map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setMenuForm(prev => ({
+                        ...prev,
+                        product_name: preset.name,
+                        category: preset.cat,
+                        selling_price: preset.price,
+                        is_veg: preset.veg
+                      }));
+                    }}
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-amber-500/20 hover:text-amber-300 text-slate-300 border border-slate-700 transition-all font-medium"
+                  >
+                    {preset.veg ? '🟢' : '🔴'} {preset.name} (₹{preset.price})
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveMenuItem} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Dish / Product Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Chicken Dum Biryani, Cold Brew..."
+                  value={menuForm.product_name}
+                  onChange={(e) => setMenuForm(prev => ({ ...prev, product_name: e.target.value }))}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Category</label>
+                  <select
+                    value={menuForm.category}
+                    onChange={(e) => setMenuForm(prev => ({ ...prev, category: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 cursor-pointer"
+                  >
+                    <option value="Beverages">Beverages</option>
+                    <option value="Main Course">Main Course</option>
+                    <option value="Starters">Starters</option>
+                    <option value="Fast Food">Fast Food</option>
+                    <option value="Desserts">Desserts</option>
+                    <option value="Snacks">Snacks</option>
+                    <option value="Retail & Packaged">Retail & Packaged</option>
+                    <option value="General">General</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Selling Price (₹) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    placeholder="e.g. 180"
+                    value={menuForm.selling_price}
+                    onChange={(e) => setMenuForm(prev => ({ ...prev, selling_price: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Initial Stock Quantity</label>
+                  <input
+                    type="number"
+                    required
+                    value={menuForm.stock_quantity}
+                    onChange={(e) => setMenuForm(prev => ({ ...prev, stock_quantity: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Dietary Type</label>
+                  <div className="grid grid-cols-2 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setMenuForm(prev => ({ ...prev, is_veg: true }))}
+                      className={`py-1 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                        menuForm.is_veg
+                          ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/40'
+                          : 'text-slate-500 hover:text-slate-300'
+                      }`}
+                    >
+                      <span>🟢 Pure Veg</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMenuForm(prev => ({ ...prev, is_veg: false }))}
+                      className={`py-1 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                        !menuForm.is_veg
+                          ? 'bg-rose-600/30 text-rose-300 border border-rose-500/40'
+                          : 'text-slate-500 hover:text-slate-300'
+                      }`}
+                    >
+                      <span>🔴 Non-Veg</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsAddMenuModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingMenu}
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-colors shadow-lg shadow-amber-500/20 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {isSavingMenu ? <span>Adding Dish...</span> : <span>Publish to Menu</span>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 2: VENDOR CHANGE SHOP PHOTO & STOREFRONT BANNER */}
+      {/* ========================================================================= */}
+      {isPhotoModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-indigo-500/30 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
+            <button
+              onClick={() => setIsPhotoModalOpen(false)}
+              className="absolute right-4 top-4 text-slate-500 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <Camera className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-white">Customize Shop Photo & Banner</h3>
+                <p className="text-xs text-slate-400">Personalize your customer-facing digital storefront</p>
+              </div>
+            </div>
+
+            {/* Curated 1-Click Storefront Themes */}
+            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+              <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider block">
+                🎨 Curated 1-Click Themes & Presets:
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  {
+                    label: '☕ Cafe & Roastery',
+                    banner: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80',
+                    photo: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=600&q=80'
+                  },
+                  {
+                    label: '🍽️ Restaurant & Dining',
+                    banner: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80',
+                    photo: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80'
+                  },
+                  {
+                    label: '🍰 Bakery & Sweets',
+                    banner: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80',
+                    photo: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80'
+                  },
+                  {
+                    label: '🛒 Supermarket / Grocery',
+                    banner: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=1200&q=80',
+                    photo: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=600&q=80'
+                  }
+                ].map((theme, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setPhotoForm({
+                        banner_url: theme.banner,
+                        photo_url: theme.photo
+                      });
+                    }}
+                    className="p-2 rounded-xl bg-slate-900 hover:bg-indigo-600/20 border border-slate-800 hover:border-indigo-500/40 text-left transition-all text-xs font-semibold text-slate-200"
+                  >
+                    {theme.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveShopPhoto} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Storefront Banner URL</label>
+                <input
+                  type="url"
+                  placeholder="https://images.unsplash.com/..."
+                  value={photoForm.banner_url}
+                  onChange={(e) => setPhotoForm(prev => ({ ...prev, banner_url: e.target.value }))}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">Shop Logo / Facade Photo URL</label>
+                <input
+                  type="url"
+                  placeholder="https://images.unsplash.com/..."
+                  value={photoForm.photo_url}
+                  onChange={(e) => setPhotoForm(prev => ({ ...prev, photo_url: e.target.value }))}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400"
+                />
+              </div>
+
+              {/* Live Preview Card */}
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Live Preview</span>
+                <div className="relative rounded-xl overflow-hidden h-24 bg-slate-900 border border-slate-800">
+                  {photoForm.banner_url ? (
+                    <img src={photoForm.banner_url} alt="Preview Banner" className="w-full h-full object-cover brightness-75" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[11px] text-slate-600">No banner selected</div>
+                  )}
+                  <div className="absolute bottom-2 left-2 flex items-center gap-2 bg-slate-950/80 px-2 py-1 rounded-lg border border-slate-700">
+                    <div className="w-6 h-6 rounded-md overflow-hidden bg-slate-800 shrink-0">
+                      {photoForm.photo_url ? (
+                        <img src={photoForm.photo_url} alt="Preview Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[10px] flex items-center justify-center h-full">🏪</span>
+                      )}
+                    </div>
+                    <span className="text-[11px] font-bold text-white">{storeInfo?.store_name || 'My Store'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsPhotoModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingPhoto}
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs transition-colors shadow-lg shadow-indigo-600/20 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {isSavingPhoto ? <span>Saving...</span> : <span>Save Shop Photos</span>}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

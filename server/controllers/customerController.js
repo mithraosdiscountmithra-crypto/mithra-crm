@@ -31,7 +31,12 @@ export const getStorefrontProducts = async (req, res, next) => {
       });
     }
 
-    const merchant = merchantRes.rows[0];
+    const merchant = {
+      ...merchantRes.rows[0],
+      banner_url: merchantRes.rows[0].banner_url || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80',
+      photo_url: merchantRes.rows[0].photo_url || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=600&q=80',
+      logo_url: merchantRes.rows[0].logo_url || null
+    };
 
     // 2. Fetch live products with stock > 0
     const productsRes = await db.query(
@@ -62,7 +67,10 @@ export const getStorefrontProducts = async (req, res, next) => {
         phone: merchant.phone,
         email: merchant.email,
         address: merchant.address,
-        city: merchant.city
+        city: merchant.city,
+        banner_url: merchant.banner_url,
+        photo_url: merchant.photo_url,
+        logo_url: merchant.logo_url
       },
       categories,
       products,
@@ -155,6 +163,8 @@ export const placeCustomerOrder = async (req, res, next) => {
       customer_address,
       order_type = 'delivery',
       payment_mode = 'online',
+      table_number = '',
+      guests_count = '',
       items = [],
       membership_phone,
       notes = ''
@@ -174,6 +184,9 @@ export const placeCustomerOrder = async (req, res, next) => {
     }
     if (order_type === 'delivery' && (!customer_address || !customer_address.trim())) {
       return res.status(400).json({ success: false, error: 'Delivery address is required for home delivery orders' });
+    }
+    if (order_type === 'dine_in' && (!table_number || !String(table_number).trim())) {
+      return res.status(400).json({ success: false, error: 'Table number is required for Dine-in orders (e.g. Table 4)' });
     }
 
     // Verify merchant
@@ -287,6 +300,12 @@ export const placeCustomerOrder = async (req, res, next) => {
     // Generate unique order number (e.g. DM-ORD-389104)
     const orderNumber = `DM-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
 
+    const orderNotes = [
+      order_type === 'dine_in' ? `[Dine-In Table #${table_number}${guests_count ? ` - ${guests_count} Guests` : ''}]` : null,
+      (payment_mode === 'cash' || payment_mode === 'cod') ? (order_type === 'delivery' ? '[Cash on Delivery (COD)]' : '[Pay Cash at Counter/Table]') : null,
+      notes ? notes.trim() : null
+    ].filter(Boolean).join(' | ');
+
     // Insert customer_orders
     const orderInsertRes = await db.query(
       `INSERT INTO customer_orders 
@@ -308,11 +327,15 @@ export const placeCustomerOrder = async (req, res, next) => {
         discountPercent,
         totalAmount,
         'CONFIRMED',
-        notes ? notes.trim() : null
+        orderNotes || null
       ]
     );
 
-    const order = orderInsertRes.rows[0];
+    const order = {
+      ...orderInsertRes.rows[0],
+      table_number: table_number || null,
+      guests_count: guests_count || null
+    };
 
     // Insert customer_order_items and automatically decrement inventory stock
     const insertedItems = [];
@@ -370,11 +393,19 @@ export const placeCustomerOrder = async (req, res, next) => {
       .map(it => `• ${it.product_name} x ${it.quantity} = ₹${it.subtotal}`)
       .join('%0A');
 
-    const addressText = order_type === 'delivery' 
-      ? `%0A📍 *Delivery Address:* ${encodeURIComponent(customer_address || '')}` 
-      : `%0A🏪 *Type:* In-Store Pickup`;
+    let addressText = `%0A🏪 *Type:* In-Store Pickup`;
+    if (order_type === 'delivery') {
+      addressText = `%0A📍 *Delivery Address:* ${encodeURIComponent(customer_address || '')}`;
+    } else if (order_type === 'dine_in') {
+      addressText = `%0A🍽️ *Dine-In:* Table #${encodeURIComponent(table_number)}${guests_count ? ` (${guests_count} Guests)` : ''}`;
+    }
 
-    const paymentText = payment_mode === 'khata' ? 'Pay Later (Khata Ledger)' : 'Online / UPI Paid';
+    let paymentText = 'Online / UPI Paid';
+    if (payment_mode === 'khata') {
+      paymentText = 'Pay Later (Khata Ledger)';
+    } else if (payment_mode === 'cash' || payment_mode === 'cod') {
+      paymentText = order_type === 'delivery' ? '💵 Cash on Delivery (COD)' : '💵 Cash at Counter/Table';
+    }
 
     const waText = `🛍️ *NEW ONLINE ORDER: ${orderNumber}*%0A%0A` +
       `👤 *Customer:* ${encodeURIComponent(customer_name)} (${customer_phone})` +
@@ -392,6 +423,8 @@ export const placeCustomerOrder = async (req, res, next) => {
       success: true,
       message: payment_mode === 'khata' 
         ? `Order ${orderNumber} placed successfully on Customer Khata credit!` 
+        : (payment_mode === 'cash' || payment_mode === 'cod')
+        ? `Order ${orderNumber} placed with Cash on Delivery / Counter payment!`
         : `Order ${orderNumber} confirmed successfully!`,
       order: {
         ...order,

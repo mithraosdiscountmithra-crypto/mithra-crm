@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
-import { Store, User, Phone, MapPin, Tag, Database, CheckCircle, AlertCircle, Save } from 'lucide-react';
+import { Store, User, Phone, MapPin, Tag, Database, CheckCircle, AlertCircle, Save, Camera, Image } from 'lucide-react';
 
 export default function Settings() {
   const { merchant, updateMerchant } = useAuth();
@@ -12,6 +12,8 @@ export default function Settings() {
   const [phone, setPhone] = useState(merchant?.phone || '');
   const [address, setAddress] = useState(merchant?.address || '');
   const [city, setCity] = useState(merchant?.city || '');
+  const [bannerUrl, setBannerUrl] = useState(merchant?.banner_url || '');
+  const [photoUrl, setPhotoUrl] = useState(merchant?.photo_url || '');
 
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
@@ -30,12 +32,14 @@ export default function Settings() {
         category,
         phone,
         address,
-        city
+        city,
+        banner_url: bannerUrl,
+        photo_url: photoUrl
       });
 
       if (res.success && res.merchant) {
         updateMerchant(res.merchant);
-        setSuccess('Store profile updated successfully!');
+        setSuccess('Store profile and shop photos updated successfully!');
       }
     } catch (err) {
       setError(err.message || 'Failed to update profile');
@@ -161,6 +165,97 @@ export default function Settings() {
               placeholder="e.g. 450 Market Street, Suite 10"
               className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
+          </div>
+        </div>
+
+        {/* Shop Photo & Storefront Banner */}
+        <div className="pt-4 border-t border-slate-800 space-y-4">
+          <div>
+            <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Camera className="w-4 h-4" /> Storefront Shop Photo & Banner
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Customize the look of your digital storefront. Paste image URLs or pick from curated presets.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">Shop Banner URL</label>
+              <input
+                type="url"
+                value={bannerUrl}
+                onChange={(e) => setBannerUrl(e.target.value)}
+                placeholder="https://images.unsplash.com/photo-..."
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                <span className="text-[10px] text-slate-500 py-0.5">Presets:</span>
+                <button
+                  type="button"
+                  onClick={() => setBannerUrl('https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80')}
+                  className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300"
+                >
+                  Cafe/Coffee
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBannerUrl('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80')}
+                  className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300"
+                >
+                  Restaurant
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBannerUrl('https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=1200&q=80')}
+                  className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300"
+                >
+                  Supermarket
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBannerUrl('https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80')}
+                  className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300"
+                >
+                  Bakery
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">Shop Logo / Facade Photo URL</label>
+              <input
+                type="url"
+                value={photoUrl}
+                onChange={(e) => setPhotoUrl(e.target.value)}
+                placeholder="https://images.unsplash.com/photo-..."
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                <span className="text-[10px] text-slate-500 py-0.5">Presets:</span>
+                <button
+                  type="button"
+                  onClick={() => setPhotoUrl('https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=600&q=80')}
+                  className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300"
+                >
+                  Cafe Shop
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPhotoUrl('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80')}
+                  className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300"
+                >
+                  Dining Room
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPhotoUrl('https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=600&q=80')}
+                  className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300"
+                >
+                  Grocery Mart
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

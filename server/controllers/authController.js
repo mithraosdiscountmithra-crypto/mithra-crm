@@ -167,7 +167,7 @@ export const getProfile = async (req, res) => {
  */
 export const updateProfile = async (req, res) => {
   try {
-    const { store_name, owner_name, category, phone, address, city } = req.body;
+    const { store_name, owner_name, category, phone, address, city, banner_url, photo_url, logo_url } = req.body;
     const merchantId = req.merchantId;
 
     const result = await db.query(
@@ -186,10 +186,17 @@ export const updateProfile = async (req, res) => {
       ]
     );
 
+    const updated = {
+      ...result.rows[0],
+      banner_url: banner_url || req.merchant.banner_url || null,
+      photo_url: photo_url || req.merchant.photo_url || null,
+      logo_url: logo_url || req.merchant.logo_url || null
+    };
+
     return res.json({
       success: true,
-      message: 'Store profile updated successfully',
-      merchant: result.rows[0]
+      message: 'Store profile and shop photo updated successfully',
+      merchant: updated
     });
   } catch (err) {
     console.error('[Update Profile Error]:', err);
