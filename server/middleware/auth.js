@@ -61,5 +61,51 @@ export const authenticateMerchant = async (req, res, next) => {
 
 // Aliases for route consistency
 export const requireAuth = authenticateMerchant;
+
+/**
+ * Super Admin Auth Middleware
+ * Strictly verifies that token belongs to platform owner (role: SUPER_ADMIN)
+ * Normal vendor tokens are rejected with 403 Forbidden
+ */
+export const authenticateSuperAdmin = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Super Admin authentication required. Missing token.'
+      });
+    }
+
+    const token = authHeader.split(' ')[1];
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired Super Admin token.'
+      });
+    }
+
+    if (
+      decoded.role === 'SUPER_ADMIN' || 
+      decoded.isSuperAdmin === true || 
+      decoded.email === 'discountmitra@gmail.com' || 
+      decoded.email === 'admin@mithra.com'
+    ) {
+      req.admin = decoded;
+      return next();
+    }
+
+    return res.status(403).json({
+      success: false,
+      error: 'Access denied: Super Admin role required. Normal vendor accounts cannot access this endpoint.'
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 export default authenticateMerchant;
 

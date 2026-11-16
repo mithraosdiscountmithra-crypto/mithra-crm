@@ -32,7 +32,6 @@ export default function Sidebar({ activeTab, setActiveTab, currentRole = 'Owner 
     { id: 'orders', label: 'Live Store Orders', icon: ShoppingBag, badge: 'Live Feed' },
     { id: 'storefront', label: 'Customer Storefront', icon: Store, badge: 'Catalog' },
     { id: 'settings', label: 'Store Settings', icon: Settings },
-    { id: 'admin', label: '👑 Master SaaS Panel', icon: Crown, badge: 'Super' },
   ];
 
   // Role permissions map for fast client role simulation

@@ -17,7 +17,11 @@ const API_BASE = getApiBase();
  * Universal API fetcher that automatically attaches JWT token
  */
 async function request(endpoint, options = {}) {
-  const token = localStorage.getItem('loyalty_token');
+  // Use admin token for /admin endpoints if present
+  const adminToken = localStorage.getItem('loyalty_admin_token');
+  const merchantToken = localStorage.getItem('loyalty_token');
+  const token = endpoint.startsWith('/admin') && adminToken ? adminToken : (merchantToken || adminToken);
+
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {})
@@ -296,6 +300,7 @@ export const api = {
 
   // 8. Super Admin / Platform Master SaaS Controller
   admin: {
+    login: (credentials) => request('/admin/login', { method: 'POST', body: credentials }),
     getOverview: () => request('/admin/overview'),
     createVendor: (data) => request('/admin/vendors', { method: 'POST', body: data }),
     toggleVendorStatus: (id, is_active) => request(`/admin/vendors/${id}/status`, { method: 'PATCH', body: { is_active } }),

@@ -83,6 +83,7 @@ import { getTaxReport } from './controllers/financePillarController.js';
 import { getPayrollCalculation, getRBACMatrix, updateRBACRole } from './controllers/hrPillarController.js';
 import { getExecutiveOverview } from './controllers/executiveController.js';
 import { 
+  adminLogin,
   getPlatformOverview, 
   createVendor, 
   toggleVendorStatus, 
@@ -910,6 +911,11 @@ async function runUnitTests() {
   });
 
   // 44. Test Super Admin - Master Platform Overview, Vendor Provisioning & WhatsApp Dispatch
+  const { req: adminLoginReq, res: adminLoginRes } = mockReqRes({
+    body: { username: 'admin@mithra.com', password: 'MithraAdmin@2026' }
+  });
+  await adminLogin(adminLoginReq, adminLoginRes);
+
   const { req: adminOverviewReq, res: adminOverviewRes } = mockReqRes({ merchantId: 1 });
   await getPlatformOverview(adminOverviewReq, adminOverviewRes);
 

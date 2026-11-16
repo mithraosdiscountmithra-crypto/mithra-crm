@@ -29,22 +29,25 @@ import SuppliersAndPOs from './pages/SuppliersAndPOs';
 import RedemptionsList from './pages/RedemptionsList';
 import Settings from './pages/Settings';
 import SuperAdminPanel from './pages/SuperAdminPanel';
+import SuperAdminLogin from './pages/SuperAdminLogin';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
 export default function App() {
   const { merchant, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('tab') === 'admin' || params.get('admin') === 'true') {
-        return 'admin';
-      }
-    }
-    return 'executive';
-  });
+  const [activeTab, setActiveTab] = useState('executive'); // Default to Pillar 7 (Executive Suite)
   const [currentRole, setCurrentRole] = useState('Owner / CEO'); // RBAC Role Switcher
   const [authView, setAuthView] = useState('login'); // 'login' or 'register'
+
+  const [adminToken, setAdminToken] = useState(() => {
+    return typeof window !== 'undefined' ? localStorage.getItem('loyalty_admin_token') : null;
+  });
+
+  const isAdminRoute = typeof window !== 'undefined' && 
+    (window.location.pathname.startsWith('/admin') || window.location.search.includes('tab=admin') || window.location.search.includes('admin=true'));
+
+  const isImpersonating = typeof window !== 'undefined' && localStorage.getItem('is_impersonating_vendor') === 'true';
+  const impersonatedVendorName = typeof window !== 'undefined' && localStorage.getItem('impersonated_vendor_name');
 
   if (loading) {
     return (
@@ -55,7 +58,27 @@ export default function App() {
     );
   }
 
-  // Allow direct access to customer digital storefront without requiring merchant login
+  // 1. ISOLATED SUPER ADMIN PLATFORM OWNER PORTAL (Completely separate from vendors)
+  if (isAdminRoute) {
+    if (!adminToken) {
+      return (
+        <SuperAdminLogin 
+          onLoginSuccess={(adminUser) => {
+            const token = localStorage.getItem('loyalty_admin_token');
+            setAdminToken(token);
+          }} 
+        />
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8">
+        <SuperAdminPanel />
+      </div>
+    );
+  }
+
+  // 2. Allow direct access to customer digital storefront without requiring merchant login
   const isPublicStorefront = typeof window !== 'undefined' && 
     (window.location.search.includes('store') || window.location.pathname.includes('storefront'));
 
@@ -67,7 +90,7 @@ export default function App() {
     );
   }
 
-  // If merchant is not logged in, show Auth screens
+  // 3. VENDOR PORTAL: If merchant is not logged in, show Vendor Auth screens
   if (!merchant) {
     if (authView === 'register') {
       return <Register onSwitchToLogin={() => setAuthView('login')} />;
@@ -75,9 +98,31 @@ export default function App() {
     return <Login onSwitchToRegister={() => setAuthView('register')} />;
   }
 
-  // Main Merchant Portal & POS Shell
+  // 4. MAIN VENDOR PORTAL & POS TERMINAL (Tenant Isolated - Vendors NEVER see Admin Panel)
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+      {/* Super Admin Impersonation Active Banner */}
+      {isImpersonating && (
+        <div className="bg-gradient-to-r from-amber-500 via-rose-500 to-amber-600 text-slate-950 px-4 py-2.5 text-xs font-black flex flex-wrap items-center justify-between shadow-xl sticky top-0 z-50">
+          <div className="flex items-center gap-2">
+            <span className="text-base">👑</span>
+            <span>
+              [SUPER ADMIN MODE]: Currently configuring store <strong>"{merchant?.store_name || impersonatedVendorName}"</strong> as Platform Owner.
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem('is_impersonating_vendor');
+              localStorage.removeItem('impersonated_vendor_name');
+              window.location.href = '/?tab=admin';
+            }}
+            className="px-3 py-1 rounded-xl bg-slate-950 text-amber-300 font-bold hover:bg-slate-900 transition flex items-center gap-1 shadow"
+          >
+            <span>⬅️ Exit & Return to Master Admin Panel</span>
+          </button>
+        </div>
+      )}
+
       {/* Live Order Chime Sound & Banner Notifier */}
       <LiveOrderNotifier activeTab={activeTab} setActiveTab={setActiveTab} />
 
@@ -132,9 +177,6 @@ export default function App() {
           {activeTab === 'plans' && <MembershipPlans />}
           {activeTab === 'redemptions' && <RedemptionsList />}
           {activeTab === 'settings' && <Settings />}
-          {(activeTab === 'admin' || activeTab === 'super_admin') && (
-            <SuperAdminPanel setActiveTab={setActiveTab} />
-          )}
         </main>
       </div>
 

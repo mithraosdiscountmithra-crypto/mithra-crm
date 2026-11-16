@@ -1,16 +1,20 @@
 import { Router } from 'express';
 import { 
+  adminLogin,
   getPlatformOverview, 
   createVendor, 
   toggleVendorStatus, 
   impersonateVendor 
 } from '../controllers/adminController.js';
-import { authenticateMerchant } from '../middleware/auth.js';
+import { authenticateSuperAdmin } from '../middleware/auth.js';
 
 const router = Router();
 
-// Allow authenticated merchants / platform owners to access Super Admin
-router.use(authenticateMerchant);
+// 1. Public Super Admin Master Login
+router.post('/login', adminLogin);
+
+// 2. Protected Routes (Strictly Super Admin only; vendors are rejected with 403)
+router.use(authenticateSuperAdmin);
 
 // Get platform overview & all vendors
 router.get('/overview', getPlatformOverview);

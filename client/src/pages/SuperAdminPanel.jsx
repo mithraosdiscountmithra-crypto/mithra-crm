@@ -24,7 +24,8 @@ import {
   Sparkles,
   QrCode,
   Lock,
-  ArrowRight
+  ArrowRight,
+  LogOut
 } from 'lucide-react';
 
 export default function SuperAdminPanel({ setActiveTab }) {
@@ -160,11 +161,19 @@ export default function SuperAdminPanel({ setActiveTab }) {
       if (res.success && res.token) {
         localStorage.setItem('loyalty_token', res.token);
         localStorage.setItem('loyalty_merchant', JSON.stringify(res.merchant));
-        window.location.reload();
+        localStorage.setItem('is_impersonating_vendor', 'true');
+        localStorage.setItem('impersonated_vendor_name', vendorName);
+        window.location.href = '/';
       }
     } catch (err) {
       setError(err.message || 'Failed to switch to vendor');
     }
+  };
+
+  const handleAdminLogout = () => {
+    localStorage.removeItem('loyalty_admin_token');
+    localStorage.removeItem('loyalty_admin_user');
+    window.location.reload();
   };
 
   const filteredVendors = vendors.filter(v => {
@@ -224,6 +233,26 @@ export default function SuperAdminPanel({ setActiveTab }) {
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>➕ Provision New Vendor (కొత్త వెండర్)</span>
+          </button>
+
+          {/* Return to Vendor App */}
+          <a
+            href="/"
+            className="hidden md:flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700 transition"
+            title="Go to Vendor Portal"
+          >
+            <Store className="w-3.5 h-3.5 text-sky-400" />
+            <span>Vendor Portal</span>
+          </a>
+
+          {/* Super Admin Logout */}
+          <button
+            onClick={handleAdminLogout}
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold transition"
+            title="Logout from Master Admin"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
       </div>
