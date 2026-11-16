@@ -22,8 +22,9 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
-// API Routes
+// API Routes (mounted on both /api and root / for full frontend compatibility)
 app.use('/api', apiRoutes);
+app.use(apiRoutes);
 
 // Root route
 app.get('/', (req, res) => {
