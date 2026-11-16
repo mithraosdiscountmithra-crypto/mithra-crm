@@ -40,6 +40,9 @@ export async function uploadToCloudinary(file) {
       if (data.secure_url) {
         return { success: true, url: data.secure_url, public_id: data.public_id };
       }
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      console.warn('[Cloudinary Direct Upload Response]:', errData?.error?.message || 'Upload failed');
     }
   } catch (err) {
     console.warn('[Cloudinary Direct Upload Notice]: Direct upload bypassed, using optimized data URL.', err.message);
@@ -55,7 +58,7 @@ export async function uploadToCloudinary(file) {
 }
 
 /**
- * Convert file to compressed base64 data URL (max 1000px dimension)
+ * Convert file to compressed base64 data URL (max 600px dimension, ~40-60KB)
  */
 function fileToOptimizedDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -66,8 +69,8 @@ function fileToOptimizedDataUrl(file) {
       img.onerror = reject;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1000;
-        const MAX_HEIGHT = 1000;
+        const MAX_WIDTH = 600;
+        const MAX_HEIGHT = 600;
         let width = img.width;
         let height = img.height;
 
@@ -83,13 +86,13 @@ function fileToOptimizedDataUrl(file) {
           }
         }
 
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = Math.round(width);
+        canvas.height = Math.round(height);
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-        // Compress as JPEG 0.82 quality
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        // Compress as JPEG 0.70 quality for lightweight storage
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.70);
         resolve(compressedDataUrl);
       };
       img.src = e.target.result;
