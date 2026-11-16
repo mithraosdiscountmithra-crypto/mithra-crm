@@ -65,7 +65,7 @@ export default function SuperAdminPanel({ setActiveTab }) {
   // Welcome Success Modal
   const [provisionedVendor, setProvisionedVendor] = useState(null);
 
-  const fetchOverview = async () => {
+  const fetchOverview = async (retryCount = 0) => {
     try {
       setLoading(true);
       setError('');
@@ -77,6 +77,15 @@ export default function SuperAdminPanel({ setActiveTab }) {
         setError(res.error || 'Failed to load platform data');
       }
     } catch (err) {
+      if (err.message?.includes('404') || err.status === 404) {
+        setError('🔄 Render backend is finishing deployment of new admin routes. Retrying automatically in 6 seconds...');
+        if (retryCount < 5) {
+          setTimeout(() => {
+            fetchOverview(retryCount + 1);
+          }, 6000);
+          return;
+        }
+      }
       setError(err.message || 'Error connecting to platform server');
     } finally {
       setLoading(false);
