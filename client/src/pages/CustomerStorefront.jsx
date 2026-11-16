@@ -46,7 +46,7 @@ import {
   QrCode
 } from 'lucide-react';
 
-export default function CustomerStorefront({ initialSubView = 'store' }) {
+export default function CustomerStorefront({ initialSubView = 'store', isPublicCustomer = false }) {
   const { merchant } = useAuth();
   
   // Parse dynamic tenant/merchant ID and Table Number from URL (e.g. ?store=1&table=4)
@@ -55,8 +55,18 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
   const paramTable = urlParams?.get('table');
   const tenantId = paramTenant ? parseInt(paramTenant, 10) : (merchant?.id || 1);
 
+  // Check if viewing as customer (scanned QR code or public store link)
+  // Vendor controls (+ Add Menu Item, Change Shop Photo, Store QR, Incoming Orders) are strictly hidden for customers!
+  const isVendorView = Boolean(
+    merchant && 
+    merchant.id === tenantId && 
+    !isPublicCustomer && 
+    (!urlParams || !urlParams.has('store'))
+  );
+
   // Active sub-view: 'store' (Live Customer Storefront) or 'orders' (Merchant Order Fulfillment)
-  const [subView, setSubView] = useState(initialSubView);
+  // Customers are locked into the ordering storefront view!
+  const [subView, setSubView] = useState(isVendorView ? initialSubView : 'store');
 
   // Vendor QR Code & Table Standee Modal
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -515,92 +525,120 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
 
   return (
     <div className="space-y-6">
-      {/* Top Header & View Switcher */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/60 p-4 sm:p-5 rounded-2xl border border-slate-800">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
-            <Store className="w-4 h-4" />
-            <span>Mithra CRM • Digital Storefront</span>
+      {/* Top Header & View Switcher - STRICTLY HIDDEN FOR CUSTOMERS SCANNING QR CODE */}
+      {isVendorView ? (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/60 p-4 sm:p-5 rounded-2xl border border-slate-800">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
+              <Store className="w-4 h-4" />
+              <span>Merchant Management Portal</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+              <span>{storeInfo?.store_name || 'My Store'}</span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+                Vendor Mode
+              </span>
+            </h1>
+            <p className="text-xs text-slate-400 mt-1">
+              Manage your live storefront catalog, add dishes with photos, customize banners, and process incoming live orders.
+            </p>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            <span>{storeInfo?.store_name || 'Mithra CRM Digital Storefront'}</span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
-              Live Catalog
-            </span>
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Browse live merchant inventory, verify Mithra Plus VIP membership for instant discounts, and checkout with online UPI or Pay Later on Khata.
-          </p>
-        </div>
 
-        {/* Action Controls & View Switcher */}
-        <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
-          {/* Quick Vendor Management Actions */}
-          <button
-            onClick={() => setIsAddMenuModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all shadow-sm active:scale-95"
-            title="Add a new dish or product to your storefront menu"
-          >
-            <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
-            <span>+ Add Menu Item</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setPhotoForm({
-                banner_url: storeInfo?.banner_url || '',
-                photo_url: storeInfo?.photo_url || ''
-              });
-              setIsPhotoModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition-all shadow-sm active:scale-95"
-            title="Change storefront cover banner and store facade photo"
-          >
-            <Camera className="w-3.5 h-3.5 text-indigo-400" />
-            <span>📸 Change Shop Photo</span>
-          </button>
-
-          <button
-            onClick={() => setIsQRModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 text-xs font-bold transition-all shadow-sm active:scale-95"
-            title="View, download, or print your Store QR Code & Table Standee"
-          >
-            <QrCode className="w-3.5 h-3.5 text-sky-400" />
-            <span>📱 Store QR & Standee</span>
-          </button>
-
-          {/* View Switcher Pills */}
-          <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+          {/* Action Controls & View Switcher */}
+          <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+            {/* Quick Vendor Management Actions */}
             <button
-              onClick={() => setSubView('store')}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
-                subView === 'store'
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+              onClick={() => setIsAddMenuModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all shadow-sm active:scale-95"
+              title="Add a new dish or product to your storefront menu"
             >
-              <Eye className="w-4 h-4" />
-              <span>Customer Storefront</span>
+              <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
+              <span>+ Add Menu Item</span>
             </button>
+
             <button
-              onClick={() => setSubView('orders')}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
-                subView === 'orders'
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+              onClick={() => {
+                setPhotoForm({
+                  banner_url: storeInfo?.banner_url || '',
+                  photo_url: storeInfo?.photo_url || ''
+                });
+                setIsPhotoModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition-all shadow-sm active:scale-95"
+              title="Change storefront cover banner and store facade photo"
             >
-              <ListOrdered className="w-4 h-4" />
-              <span>Incoming Orders</span>
-              {merchantOrdersSummary?.pendingOrders > 0 && (
-                <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center">
-                  {merchantOrdersSummary.pendingOrders}
-                </span>
-              )}
+              <Camera className="w-3.5 h-3.5 text-indigo-400" />
+              <span>📸 Change Shop Photo</span>
             </button>
+
+            <button
+              onClick={() => setIsQRModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 text-xs font-bold transition-all shadow-sm active:scale-95"
+              title="View, download, or print your Store QR Code & Table Standee"
+            >
+              <QrCode className="w-3.5 h-3.5 text-sky-400" />
+              <span>📱 Store QR & Standee</span>
+            </button>
+
+            {/* View Switcher Pills */}
+            <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+              <button
+                onClick={() => setSubView('store')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                  subView === 'store'
+                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Eye className="w-4 h-4" />
+                <span>Customer Storefront</span>
+              </button>
+              <button
+                onClick={() => setSubView('orders')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                  subView === 'orders'
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <ListOrdered className="w-4 h-4" />
+                <span>Incoming Orders</span>
+                {merchantOrdersSummary?.pendingOrders > 0 && (
+                  <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center">
+                    {merchantOrdersSummary.pendingOrders}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        /* CUSTOMER QR SCANNER HEADER - PURE ORDERING EXPERIENCE */
+        <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 border border-slate-800 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center text-white text-xl shadow-md shrink-0">
+              👑
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-sm sm:text-base font-black text-white">{storeInfo?.store_name || 'Welcome to our Store'}</h1>
+                {paramTable && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow-sm">
+                    🍽️ Table #{paramTable}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400 font-medium">
+                {paramTable ? 'Dine-In Contactless Ordering • Pay Cash or Online' : 'Browse live menu & order directly from your mobile'}
+              </p>
+            </div>
+          </div>
+          <div className="hidden xs:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-xs font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Ordering Open</span>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* SUB-VIEW 1: LIVE CUSTOMER STOREFRONT (MOBILE + DESKTOP RESPONSIVE) */}
@@ -1750,9 +1788,12 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 1: VENDOR ADD NEW MENU ITEM */}
+      {/* VENDOR MODALS: STRICTLY ACCESSIBLE ONLY TO AUTHENTICATED SHOP OWNERS */}
       {/* ========================================================================= */}
-      {isAddMenuModalOpen && (
+      {isVendorView && (
+        <>
+          {/* MODAL 1: VENDOR ADD NEW MENU ITEM */}
+          {isAddMenuModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-amber-500/30 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
             <button
@@ -2200,12 +2241,14 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
         </div>
       )}
 
-      {/* Vendor QR Code & Table Standee Modal */}
-      <VendorQRModal 
-        isOpen={isQRModalOpen} 
-        onClose={() => setIsQRModalOpen(false)} 
-        merchant={merchant || storeInfo} 
-      />
+          {/* Vendor QR Code & Table Standee Modal */}
+          <VendorQRModal 
+            isOpen={isQRModalOpen} 
+            onClose={() => setIsQRModalOpen(false)} 
+            merchant={merchant || storeInfo} 
+          />
+        </>
+      )}
     </div>
   );
 }

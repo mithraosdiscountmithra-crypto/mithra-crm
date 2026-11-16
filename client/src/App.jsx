@@ -52,8 +52,8 @@ export default function App() {
 
   if (isPublicStorefront) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8">
-        <CustomerStorefront />
+      <div className="min-h-screen bg-slate-950 text-slate-100 p-3 sm:p-6 lg:p-8">
+        <CustomerStorefront isPublicCustomer={true} />
       </div>
     );
   }
