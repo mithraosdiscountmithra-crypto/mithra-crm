@@ -14,6 +14,7 @@ import suppliersRoutes from './suppliersRoutes.js';
 import purchaseOrdersRoutes from './purchaseOrdersRoutes.js';
 import aiRoutes from './aiRoutes.js';
 import voiceRoutes from './voiceRoutes.js';
+import customerRoutes from './customerRoutes.js';
 
 const router = Router();
 
@@ -32,6 +33,7 @@ router.use('/suppliers', suppliersRoutes);
 router.use('/purchase-orders', purchaseOrdersRoutes);
 router.use('/ai', aiRoutes);
 router.use('/voice', voiceRoutes);
+router.use('/customer', customerRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {

@@ -246,6 +246,34 @@ async function seedData() {
          'Debtor requested callback tomorrow morning due to busy schedule.', NULL, CURRENT_TIMESTAMP + INTERVAL '1 day', false, NULL, NULL)
     `, [merchantId, cust1.rows[0].id, cust3.rows[0].id, cust2.rows[0].id]);
 
+    // 16. Seed Customer Digital Storefront Orders
+    const ord1 = await client.query(`
+      INSERT INTO customer_orders (merchant_id, customer_id, order_number, customer_name, customer_phone, customer_address, order_type, payment_mode, subtotal, discount_amount, membership_discount_percent, total_amount, status, notes)
+      VALUES 
+        ($1, $2, 'DM-ORD-101', 'Alex Rivera', '5551234567', '742 Evergreen Terrace, Apt 4B', 'delivery', 'online', 65.00, 13.00, 20.00, 52.00, 'CONFIRMED', 'Ring doorbell twice')
+      RETURNING id;
+    `, [merchantId, cust1.rows[0].id]);
+
+    await client.query(`
+      INSERT INTO customer_order_items (order_id, product_id, product_name, quantity, unit_price, subtotal)
+      VALUES 
+        ($1, 1, 'House Espresso Blend 1kg', 2, 22.50, 45.00),
+        ($1, 3, 'Vanilla Hazelnut Syrup 750ml', 1, 20.00, 20.00)
+    `, [ord1.rows[0].id]);
+
+    const ord2 = await client.query(`
+      INSERT INTO customer_orders (merchant_id, customer_id, order_number, customer_name, customer_phone, customer_address, order_type, payment_mode, subtotal, discount_amount, membership_discount_percent, total_amount, status, notes)
+      VALUES 
+        ($1, $2, 'DM-ORD-102', 'David Chen', '5553456789', NULL, 'pickup', 'khata', 35.00, 8.75, 25.00, 26.25, 'PREPARING', 'Pick up around 4 PM')
+      RETURNING id;
+    `, [merchantId, cust3.rows[0].id]);
+
+    await client.query(`
+      INSERT INTO customer_order_items (order_id, product_id, product_name, quantity, unit_price, subtotal)
+      VALUES 
+        ($1, 5, 'Double-Walled Glass Tumbler 16oz', 1, 35.00, 35.00)
+    `, [ord2.rows[0].id]);
+
     console.log('[Seed] Demo data seeded successfully into PostgreSQL!');
   } catch (err) {
     console.error('[Seed Error]:', err.message);

@@ -49,6 +49,8 @@ class MemoryStore {
     this.purchase_order_items = [];
     this.supplier_ledgers = [];
     this.debtor_call_logs = [];
+    this.customer_orders = [];
+    this.customer_order_items = [];
     this.merchantSeq = 1;
     this.planSeq = 1;
     this.customerSeq = 1;
@@ -65,6 +67,8 @@ class MemoryStore {
     this.poItemSeq = 1;
     this.supplierLedgerSeq = 1;
     this.callLogSeq = 1;
+    this.orderSeq = 1;
+    this.orderItemSeq = 1;
 
     this.seedDemoData();
   }
@@ -747,6 +751,84 @@ class MemoryStore {
       }
     ];
     this.debtor_call_logs.push(...callLogs);
+
+    // Seed Digital Storefront Customer Orders
+    const ord1 = {
+      id: this.orderSeq++,
+      merchant_id: merchant.id,
+      customer_id: customers[0].id, // Alex Rivera
+      order_number: "DM-ORD-101",
+      customer_name: "Alex Rivera",
+      customer_phone: "5551234567",
+      customer_address: "742 Evergreen Terrace, Apt 4B",
+      order_type: "delivery",
+      payment_mode: "online",
+      subtotal: 65.00,
+      discount_amount: 13.00,
+      membership_discount_percent: 20.00,
+      total_amount: 52.00,
+      status: "CONFIRMED",
+      notes: "Ring doorbell twice",
+      created_at: new Date(Date.now() - 3600 * 1000 * 2)
+    };
+
+    const ord1Items = [
+      {
+        id: this.orderItemSeq++,
+        order_id: ord1.id,
+        product_id: 1,
+        product_name: "House Espresso Blend 1kg",
+        quantity: 2,
+        unit_price: 22.50,
+        subtotal: 45.00,
+        created_at: new Date(Date.now() - 3600 * 1000 * 2)
+      },
+      {
+        id: this.orderItemSeq++,
+        order_id: ord1.id,
+        product_id: 3,
+        product_name: "Vanilla Hazelnut Syrup 750ml",
+        quantity: 1,
+        unit_price: 20.00,
+        subtotal: 20.00,
+        created_at: new Date(Date.now() - 3600 * 1000 * 2)
+      }
+    ];
+
+    const ord2 = {
+      id: this.orderSeq++,
+      merchant_id: merchant.id,
+      customer_id: customers[2].id, // David Chen
+      order_number: "DM-ORD-102",
+      customer_name: "David Chen",
+      customer_phone: "5553456789",
+      customer_address: null,
+      order_type: "pickup",
+      payment_mode: "khata",
+      subtotal: 35.00,
+      discount_amount: 8.75,
+      membership_discount_percent: 25.00,
+      total_amount: 26.25,
+      status: "PREPARING",
+      notes: "Pick up around 4 PM",
+      created_at: new Date(Date.now() - 3600 * 1000 * 1)
+    };
+
+    const ord2Items = [
+      {
+        id: this.orderItemSeq++,
+        order_id: ord2.id,
+        product_id: 5,
+        product_name: "Double-Walled Glass Tumbler 16oz",
+        quantity: 1,
+        unit_price: 35.00,
+        subtotal: 35.00,
+        created_at: new Date(Date.now() - 3600 * 1000 * 1)
+      }
+    ];
+
+    this.customer_orders.push(ord1, ord2);
+    this.customer_order_items.push(...ord1Items, ...ord2Items);
   }
 }
 
@@ -923,6 +1005,7 @@ function executeMemoryQuery(text, params) {
       anniversary: customer.anniversary,
       membership_id: membership ? membership.id : null,
       membership_status: membership ? membership.status : 'NO_MEMBERSHIP',
+      status: membership ? membership.status : 'NO_MEMBERSHIP',
       start_date: membership ? membership.start_date : null,
       expiry_date: membership ? membership.expiry_date : null,
       plan_id: plan ? plan.id : null,
@@ -1069,6 +1152,7 @@ function executeMemoryQuery(text, params) {
       anniversary: customer.anniversary,
       membership_id: membership ? membership.id : null,
       membership_status: membership ? membership.status : 'NO_MEMBERSHIP',
+      status: membership ? membership.status : 'NO_MEMBERSHIP',
       start_date: membership ? membership.start_date : null,
       expiry_date: membership ? membership.expiry_date : null,
       plan_id: plan ? plan.id : null,
@@ -1312,6 +1396,29 @@ function executeMemoryQuery(text, params) {
     return { rows: [], rowCount: initialLen - memoryStore.products.length };
   }
 
+  // 30a. Storefront active products query: SELECT * FROM products WHERE merchant_id = $1 AND stock_quantity > 0
+  if (normalized.includes('FROM products') && normalized.includes('stock_quantity > 0')) {
+    const merchant_id = parseInt(params[0], 10);
+    const rows = memoryStore.products
+      .filter(p => p.merchant_id === merchant_id && p.stock_quantity > 0)
+      .sort((a, b) => a.product_name.localeCompare(b.product_name));
+    return { rows, rowCount: rows.length };
+  }
+
+  // 30b. Storefront stock decrement: UPDATE products SET stock_quantity = stock_quantity -
+  if (normalized.includes('UPDATE products SET stock_quantity = stock_quantity -') || normalized.includes('stock_quantity = stock_quantity - $1')) {
+    const [qty, id, merchant_id] = params;
+    const p = memoryStore.products.find(
+      prod => prod.id === parseInt(id, 10) && prod.merchant_id === parseInt(merchant_id, 10)
+    );
+    if (p) {
+      p.stock_quantity = Math.max(0, p.stock_quantity - parseInt(qty, 10));
+      p.updated_at = new Date();
+      return { rows: [p], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
   // 31a. Customer Ledger: WHERE customer_id = $1 AND merchant_id = $2
   if (normalized.includes('FROM customer_ledgers') && normalized.includes('WHERE customer_id = $1 AND merchant_id = $2')) {
     const [customer_id, merchant_id] = params;
@@ -1355,8 +1462,8 @@ function executeMemoryQuery(text, params) {
     return { rows, rowCount: rows.length };
   }
 
-  // 33. INSERT INTO customer_ledgers
-  if (normalized.startsWith('INSERT INTO customer_ledgers')) {
+  // 33. INSERT INTO customer_ledgers or customer_khata
+  if (normalized.startsWith('INSERT INTO customer_ledgers') || normalized.startsWith('INSERT INTO customer_khata')) {
     const [merchant_id, customer_id, transaction_type, amount, notes, due_date, status] = params;
     const newEntry = {
       id: memoryStore.ledgerSeq++,
@@ -1880,6 +1987,95 @@ function executeMemoryQuery(text, params) {
       }
     });
     return { rows: [], rowCount: updatedCount };
+  }
+
+  // 64. INSERT INTO customer_orders
+  if (normalized.startsWith('INSERT INTO customer_orders')) {
+    const [merchant_id, customer_id, order_number, customer_name, customer_phone, customer_address, order_type, payment_mode, subtotal, discount_amount, membership_discount_percent, total_amount, status, notes] = params;
+    const newOrder = {
+      id: memoryStore.orderSeq++,
+      merchant_id: parseInt(merchant_id, 10),
+      customer_id: customer_id ? parseInt(customer_id, 10) : null,
+      order_number,
+      customer_name,
+      customer_phone,
+      customer_address: customer_address || null,
+      order_type: order_type || 'delivery',
+      payment_mode: payment_mode || 'online',
+      subtotal: parseFloat(subtotal) || 0,
+      discount_amount: parseFloat(discount_amount) || 0,
+      membership_discount_percent: parseFloat(membership_discount_percent) || 0,
+      total_amount: parseFloat(total_amount) || 0,
+      status: status || 'PENDING',
+      notes: notes || null,
+      created_at: new Date()
+    };
+    memoryStore.customer_orders.push(newOrder);
+    return { rows: [newOrder], rowCount: 1 };
+  }
+
+  // 65. INSERT INTO customer_order_items
+  if (normalized.startsWith('INSERT INTO customer_order_items')) {
+    const [order_id, product_id, product_name, quantity, unit_price, subtotal] = params;
+    const newItem = {
+      id: memoryStore.orderItemSeq++,
+      order_id: parseInt(order_id, 10),
+      product_id: product_id ? parseInt(product_id, 10) : null,
+      product_name,
+      quantity: parseInt(quantity, 10),
+      unit_price: parseFloat(unit_price) || 0,
+      subtotal: parseFloat(subtotal) || 0,
+      created_at: new Date()
+    };
+    memoryStore.customer_order_items.push(newItem);
+    return { rows: [newItem], rowCount: 1 };
+  }
+
+  // 66. SELECT customer_orders for specific customer phone: WHERE merchant_id = $1 AND customer_phone = $2
+  if (normalized.includes('FROM customer_orders') && normalized.includes('customer_phone = $2')) {
+    const merchant_id = parseInt(params[0], 10);
+    const phone = String(params[1]).replace(/\D/g, '');
+    const orders = memoryStore.customer_orders
+      .filter(o => o.merchant_id === merchant_id && String(o.customer_phone).replace(/\D/g, '') === phone)
+      .sort((a, b) => b.id - a.id);
+    const enriched = orders.map(o => ({
+      ...o,
+      items: memoryStore.customer_order_items.filter(it => it.order_id === o.id)
+    }));
+    return { rows: enriched, rowCount: enriched.length };
+  }
+
+  // 67. SELECT customer_orders for merchant: WHERE merchant_id = $1
+  if (normalized.includes('FROM customer_orders') && normalized.includes('WHERE merchant_id = $1')) {
+    const merchant_id = parseInt(params[0], 10);
+    const orders = memoryStore.customer_orders
+      .filter(o => o.merchant_id === merchant_id)
+      .sort((a, b) => b.id - a.id);
+    const enriched = orders.map(o => ({
+      ...o,
+      items: memoryStore.customer_order_items.filter(it => it.order_id === o.id)
+    }));
+    return { rows: enriched, rowCount: enriched.length };
+  }
+
+  // 68. SELECT FROM customer_order_items WHERE order_id = $1
+  if (normalized.includes('FROM customer_order_items WHERE order_id = $1')) {
+    const order_id = parseInt(params[0], 10);
+    const rows = memoryStore.customer_order_items.filter(it => it.order_id === order_id);
+    return { rows, rowCount: rows.length };
+  }
+
+  // 69. UPDATE customer_orders SET status = $1 WHERE id = $2 AND merchant_id = $3
+  if (normalized.includes('UPDATE customer_orders SET status = $1')) {
+    const [status, id, merchant_id] = params;
+    const order = memoryStore.customer_orders.find(
+      o => o.id === parseInt(id, 10) && o.merchant_id === parseInt(merchant_id, 10)
+    );
+    if (order) {
+      order.status = status;
+      return { rows: [order], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
   }
 
   console.warn('[Unmatched Fallback Query]:', text);

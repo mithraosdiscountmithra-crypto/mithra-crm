@@ -78,6 +78,14 @@ A production-ready Multi-Tenant Loyalty and Membership SaaS CRM platform designe
    - **Scheduled Callbacks Queue**: Automatically records debtor callback requests (e.g. "I am driving, call tomorrow") with calendar timestamps and 1-click retry.
    - **Interactive Telephony Simulator**: Merchant UI modal to test speech utterances, review call transcripts, inspect parsed intents, and view instant dispatch links.
 
+13. **Customer Digital Storefront & Online Ordering**:
+   - **Mobile App & Desktop Responsive Layout**: Smartphone-optimized touch cards, category horizontal scroller, bottom sticky cart bar, slide-up cart drawer, and sticky side cart panel on desktop.
+   - **Live Active Inventory**: Real-time browsing of merchant products with `stock_quantity > 0`, automatic stock decrement upon order confirmation.
+   - **Mithra Plus VIP Loyalty Discount Engine**: Phone-based customer verification with instant celebratory badges and automatic % discounts applied to cart subtotal.
+   - **Dual Fulfillment & Payment Modes**: Supports both Home Delivery and In-Store Pickup, plus instant Online/UPI payment or "Pay Later (Khata Ledger)" which automatically posts a debit entry (`GIVEN`) to the customer's digital khata book.
+   - **WhatsApp Order Confirmation**: Generates pre-formatted WhatsApp order receipts (`DM-ORD-XXXXXX`) to share orders directly with the merchant store via `wa.me`.
+   - **Merchant Order Fulfillment Stream**: Dedicated merchant management tab with real-time KPI metrics (Total Orders, Storefront Revenue, Pending Fulfillment) and 1-click order status workflow (`CONFIRMED` -> `PREPARING` -> `OUT_FOR_DELIVERY` -> `COMPLETED`).
+
 ---
 
 ## 📂 Project Structure
@@ -114,7 +122,8 @@ merchant-loyalty-saas/
 │   │   ├── suppliersController.js   # Suppliers directory & Accounts Payable Khata
 │   │   ├── purchaseOrdersController.js # PO creation, WhatsApp links & stock inwarding
 │   │   ├── aiController.js          # Smart Copilot powered by Google Gemini & Store Context
-│   │   └── voiceController.js       # AI Voice Agent, intent parsing & WhatsApp UPI dispatch
+│   │   ├── voiceController.js       # AI Voice Agent, intent parsing & WhatsApp UPI dispatch
+│   │   └── customerController.js    # Storefront catalog, VIP check, order checkout & Khata integration
 │   ├── routes/
 │   │   ├── index.js           # Central API router (/api)
 │   │   ├── authRoutes.js
@@ -131,8 +140,9 @@ merchant-loyalty-saas/
 │   │   ├── suppliersRoutes.js
 │   │   ├── purchaseOrdersRoutes.js
 │   │   ├── aiRoutes.js
-│   │   └── voiceRoutes.js
-│   └── test-unit.js           # Automated controller verification test suite
+│   │   ├── voiceRoutes.js
+│   │   └── customerRoutes.js
+│   └── test-unit.js           # Automated 36-point controller verification test suite
 │
 └── client/                    # React & Tailwind CSS Frontend
     ├── package.json
@@ -156,6 +166,7 @@ merchant-loyalty-saas/
         │   └── MarkdownRenderer.jsx # Markdown parser for headers, tables & code
         └── pages/
             ├── Dashboard.jsx        # Sales, discounts, and customer stats
+            ├── CustomerStorefront.jsx # Responsive customer storefront (mobile & desktop) & order fulfillment
             ├── POSCheckout.jsx      # High-speed cashier checkout terminal
             ├── DigitalKhata.jsx     # Credit ledger, passbook statements & WhatsApp reminders
             ├── Inventory.jsx        # Stock tracking, low-stock alerts & SKU manager
@@ -343,7 +354,80 @@ CREATE INDEX idx_debtor_call_logs_merchant ON debtor_call_logs(merchant_id);
 CREATE INDEX idx_debtor_call_logs_customer ON debtor_call_logs(customer_id);
 CREATE INDEX idx_debtor_call_logs_intent ON debtor_call_logs(merchant_id, intent);
 CREATE INDEX idx_debtor_call_logs_callback ON debtor_call_logs(merchant_id, callback_scheduled_at);
+
+-- 17. Customer Orders (Storefront Online & Khata Orders)
+CREATE TABLE customer_orders (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+    customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+    order_number VARCHAR(100) NOT NULL,
+    customer_name VARCHAR(255) NOT NULL,
+    customer_phone VARCHAR(50) NOT NULL,
+    customer_address TEXT,
+    order_type VARCHAR(20) DEFAULT 'delivery' CHECK (order_type IN ('delivery', 'pickup')),
+    payment_mode VARCHAR(20) DEFAULT 'online' CHECK (payment_mode IN ('online', 'khata')),
+    subtotal NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    discount_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    membership_discount_percent NUMERIC(5, 2) DEFAULT 0.00,
+    total_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    status VARCHAR(50) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELLED')),
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_merchant_order_number UNIQUE (merchant_id, order_number)
+);
+
+-- 18. Customer Order Items
+CREATE TABLE customer_order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES customer_orders(id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+    product_name VARCHAR(255) NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    unit_price NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    subtotal NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_customer_orders_merchant ON customer_orders(merchant_id);
+CREATE INDEX idx_customer_orders_phone ON customer_orders(merchant_id, customer_phone);
+CREATE INDEX idx_customer_orders_status ON customer_orders(merchant_id, status);
+CREATE INDEX idx_customer_order_items_order ON customer_order_items(order_id);
 ```
+
+---
+
+## 🛍️ Customer Digital Storefront & Ordering API
+
+1. **Browse Live Store Products (`stock_quantity > 0`)**:
+   `GET /api/customer/products?tenant_id=1`
+   - Returns active catalog filtered with stock availability, categories, and merchant metadata.
+
+2. **Verify VIP / Mithra Plus Membership Discount**:
+   `GET /api/customer/membership-check?tenant_id=1&phone=5551234567`
+   - Checks customer loyalty plan validity and returns discount percent (e.g. 20% OFF).
+
+3. **Customer Checkout & Order Placement**:
+   `POST /api/customer/orders`
+   ```json
+   {
+     "tenant_id": 1,
+     "customer_name": "Alex Rivera",
+     "customer_phone": "5551234567",
+     "customer_address": "104 Coffee Lane, Suite 2B",
+     "order_type": "delivery",
+     "payment_mode": "khata",
+     "items": [
+       { "product_id": 1, "product_name": "Ethiopian Yirgacheffe Beans (250g)", "quantity": 2, "unit_price": 650.00 }
+     ]
+   }
+   ```
+   - Automatically deducts inventory stock (`stock_quantity = stock_quantity - quantity`).
+   - If `payment_mode === 'khata'`, automatically logs a debit entry (`GIVEN`) into `customer_ledgers` / `customer_khata`.
+   - Generates pre-formatted WhatsApp order receipt deep link (`wa.me`).
+
+4. **Merchant Storefront Order Management & Status Workflow**:
+   `GET /api/customer/merchant-orders`
+   `PUT /api/customer/orders/:id/status` (Transitions: `CONFIRMED` -> `PREPARING` -> `OUT_FOR_DELIVERY` -> `COMPLETED`)
 
 ---
 

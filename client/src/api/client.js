@@ -155,6 +155,18 @@ export const api = {
     sendWebhookResponse: (data) => request('/voice/webhook/call-response', { method: 'POST', body: data }),
     getScheduledCallbacks: () => request('/voice/scheduled-callbacks'),
     getCallLogs: (customerId = '') => request(`/voice/call-logs${customerId ? `?customer_id=${customerId}` : ''}`),
+  },
+
+  // Customer Digital Storefront & Ordering
+  customer: {
+    getProducts: (tenantId = 1) => request(`/customer/products?tenant_id=${tenantId}`),
+    checkMembership: (tenantId = 1, phone = '') =>
+      request(`/customer/membership-check?tenant_id=${tenantId}&phone=${encodeURIComponent(phone)}`),
+    placeOrder: (data) => request('/customer/orders', { method: 'POST', body: data }),
+    getOrders: (tenantId = 1, phone = '') =>
+      request(`/customer/orders?tenant_id=${tenantId}${phone ? `&phone=${encodeURIComponent(phone)}` : ''}`),
+    getMerchantOrders: () => request('/customer/merchant-orders'),
+    updateOrderStatus: (id, status) => request(`/customer/orders/${id}/status`, { method: 'PUT', body: { status } }),
   }
 };
 

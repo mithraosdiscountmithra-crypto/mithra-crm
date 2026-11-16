@@ -13,6 +13,7 @@ import Expenses from './pages/Expenses';
 import StaffPayroll from './pages/StaffPayroll';
 import WhatsAppMarketing from './pages/WhatsAppMarketing';
 import SuppliersAndPOs from './pages/SuppliersAndPOs';
+import CustomerStorefront from './pages/CustomerStorefront';
 import RedemptionsList from './pages/RedemptionsList';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
@@ -28,6 +29,18 @@ export default function App() {
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-300">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
         <div className="text-sm font-semibold tracking-wide">Initializing Merchant SaaS Platform...</div>
+      </div>
+    );
+  }
+
+  // Allow direct access to customer digital storefront without requiring merchant login
+  const isPublicStorefront = typeof window !== 'undefined' && 
+    (window.location.search.includes('store') || window.location.pathname.includes('storefront'));
+
+  if (isPublicStorefront) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8">
+        <CustomerStorefront />
       </div>
     );
   }
@@ -53,6 +66,7 @@ export default function App() {
         {/* Dynamic Main Workspace */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
+          {activeTab === 'storefront' && <CustomerStorefront />}
           {activeTab === 'pos' && <POSCheckout />}
           {activeTab === 'udhaar' && <DigitalKhata />}
           {activeTab === 'inventory' && <Inventory />}
@@ -76,6 +90,14 @@ export default function App() {
           }`}
         >
           Dashboard
+        </button>
+        <button
+          onClick={() => setActiveTab('storefront')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 ${
+            activeTab === 'storefront' ? 'bg-emerald-600 text-white' : 'text-slate-400'
+          }`}
+        >
+          Storefront
         </button>
         <button
           onClick={() => setActiveTab('pos')}

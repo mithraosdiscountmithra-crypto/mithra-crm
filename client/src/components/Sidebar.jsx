@@ -2,6 +2,7 @@ import React from 'react';
 import { 
   LayoutDashboard, 
   ShoppingCart, 
+  Store,
   Users, 
   Award, 
   Receipt, 
@@ -19,6 +20,7 @@ import {
 export default function Sidebar({ activeTab, setActiveTab }) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'storefront', label: 'Online Storefront', icon: Store, badge: 'Live' },
     { id: 'pos', label: 'POS Checkout', icon: ShoppingCart, badge: 'Fast' },
     { id: 'udhaar', label: 'Digital Khata / Udhaar', icon: BookOpen, badge: 'Credit' },
     { id: 'inventory', label: 'Inventory & Stock', icon: Package },

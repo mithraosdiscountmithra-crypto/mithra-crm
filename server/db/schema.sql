@@ -225,6 +225,42 @@ CREATE TABLE IF NOT EXISTS debtor_call_logs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 17. Customer Orders (Digital Storefront Online Orders)
+CREATE TABLE IF NOT EXISTS customer_orders (
+    id SERIAL PRIMARY KEY,
+    merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+    customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+    order_number VARCHAR(100) NOT NULL,
+    customer_name VARCHAR(255) NOT NULL,
+    customer_phone VARCHAR(50) NOT NULL,
+    customer_address TEXT,
+    order_type VARCHAR(20) NOT NULL DEFAULT 'delivery' CHECK (order_type IN ('delivery', 'pickup')),
+    payment_mode VARCHAR(20) NOT NULL DEFAULT 'online' CHECK (payment_mode IN ('online', 'khata', 'cash')),
+    subtotal NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    discount_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    membership_discount_percent NUMERIC(5, 2) DEFAULT 0.00,
+    total_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    status VARCHAR(50) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELLED')),
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_merchant_order_number UNIQUE (merchant_id, order_number)
+);
+
+-- 18. Customer Order Items (Line Items with Products)
+CREATE TABLE IF NOT EXISTS customer_order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES customer_orders(id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+    product_name VARCHAR(255) NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    unit_price NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    subtotal NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- View: customer_khata (Alias for customer_ledgers)
+CREATE OR REPLACE VIEW customer_khata AS SELECT * FROM customer_ledgers;
+
 -- Indexes for performance and fast POS lookup
 CREATE INDEX IF NOT EXISTS idx_merchants_email ON merchants(email);
 CREATE INDEX IF NOT EXISTS idx_customers_merchant_phone ON customers(merchant_id, phone);
@@ -255,3 +291,9 @@ CREATE INDEX IF NOT EXISTS idx_debtor_call_logs_merchant ON debtor_call_logs(mer
 CREATE INDEX IF NOT EXISTS idx_debtor_call_logs_customer ON debtor_call_logs(customer_id);
 CREATE INDEX IF NOT EXISTS idx_debtor_call_logs_intent ON debtor_call_logs(merchant_id, intent);
 CREATE INDEX IF NOT EXISTS idx_debtor_call_logs_callback ON debtor_call_logs(merchant_id, callback_scheduled_at);
+CREATE INDEX IF NOT EXISTS idx_customer_orders_merchant ON customer_orders(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_customer_orders_customer ON customer_orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_customer_orders_phone ON customer_orders(merchant_id, customer_phone);
+CREATE INDEX IF NOT EXISTS idx_customer_orders_status ON customer_orders(merchant_id, status);
+CREATE INDEX IF NOT EXISTS idx_customer_orders_created ON customer_orders(merchant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_customer_order_items_order ON customer_order_items(order_id);

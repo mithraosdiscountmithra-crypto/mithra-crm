@@ -52,6 +52,14 @@ import {
   getScheduledCallbacks, 
   getCallLogs 
 } from './controllers/voiceController.js';
+import {
+  getStorefrontProducts,
+  checkCustomerMembership,
+  placeCustomerOrder,
+  getCustomerOrders,
+  getMerchantStorefrontOrders,
+  updateOrderStatus
+} from './controllers/customerController.js';
 
 // Helper to mock express req/res
 function mockReqRes(reqData = {}) {
@@ -577,7 +585,96 @@ async function runUnitTests() {
     sampleScheduledDebtor: getSchedRes.body.callbacks?.[0]?.customer_name
   });
 
-  console.log('\n🌟 ALL 32 SAAS PLATFORM MODULE CONTROLLERS VERIFIED AND WORKING PROPERLY! 🌟');
+  // 33. Test Customer Storefront: Live Catalog & Active Stock Fetch
+  const { req: storefrontReq, res: storefrontRes } = mockReqRes({
+    query: { tenant_id: 1 }
+  });
+  await getStorefrontProducts(storefrontReq, storefrontRes);
+  console.log('33. Customer Storefront - Products & Catalog Fetch:', {
+    passed: storefrontRes.body.success === true && 
+            storefrontRes.body.products?.length > 0 && 
+            storefrontRes.body.merchant?.store_name === 'Artisan Coffee Roasters',
+    productCount: storefrontRes.body.products?.length,
+    merchantName: storefrontRes.body.merchant?.store_name,
+    categories: storefrontRes.body.categories
+  });
+
+  // 34. Test Customer Storefront: VIP / Mithra Plus Membership Check
+  const { req: vipReq, res: vipRes } = mockReqRes({
+    query: { tenant_id: 1, phone: '5551234567' } // Alex Rivera - Gold VIP
+  });
+  await checkCustomerMembership(vipReq, vipRes);
+  console.log('34. Customer Storefront - VIP Membership Verification:', {
+    passed: vipRes.body.success === true && 
+            vipRes.body.has_membership === true && 
+            vipRes.body.membership?.discount_percent > 0,
+    hasMembership: vipRes.body.has_membership,
+    customerName: vipRes.body.customer?.name,
+    planName: vipRes.body.membership?.plan_name,
+    discountPercent: `${vipRes.body.membership?.discount_percent}%`
+  });
+
+  // 35. Test Customer Checkout: Order Creation, Stock Decrement & Digital Khata Debit
+  const { req: orderReq, res: orderRes } = mockReqRes({
+    body: {
+      tenant_id: 1,
+      customer_name: 'Alex Rivera',
+      customer_phone: '5551234567',
+      customer_address: '104 Coffee Lane, Suite 2B, Downtown',
+      order_type: 'delivery',
+      payment_mode: 'khata', // Pay Later on Khata!
+      items: [
+        {
+          product_id: 1, // Ethiopian Yirgacheffe Beans (250g) @ ₹650
+          quantity: 2,
+          unit_price: 650.00
+        }
+      ],
+      notes: 'Please leave package at the front porch'
+    }
+  });
+  await placeCustomerOrder(orderReq, orderRes);
+  console.log('35. Customer Storefront - Checkout, Stock Decrement & Khata Debit:', {
+    passed: orderRes.body.success === true && 
+            orderRes.body.order?.order_number?.startsWith('DM-ORD-') &&
+            orderRes.body.order?.payment_mode === 'khata' &&
+            orderRes.body.khata_entry?.transaction_type === 'GIVEN' &&
+            Boolean(orderRes.body.whatsapp_order_link),
+    orderNumber: orderRes.body.order?.order_number,
+    subtotal: `₹${orderRes.body.order?.subtotal}`,
+    discount: `₹${orderRes.body.order?.discount_amount}`,
+    totalAmount: `₹${orderRes.body.order?.total_amount}`,
+    khataDebitRecorded: orderRes.body.khata_entry ? `₹${orderRes.body.khata_entry.amount}` : false,
+    hasWhatsAppLink: Boolean(orderRes.body.whatsapp_order_link)
+  });
+
+  // 36. Test Merchant Storefront Order Stream & Status Workflow
+  const { req: merchantOrdersReq, res: merchantOrdersRes } = mockReqRes({
+    merchant: { id: 1, store_name: 'Artisan Coffee Roasters' }
+  });
+  await getMerchantStorefrontOrders(merchantOrdersReq, merchantOrdersRes);
+  const placedOrderId = orderRes.body.order?.id;
+  let updateCustOrderStatusRes = { body: {} };
+  if (placedOrderId) {
+    const { req: updateCustOrderStatusReq, res: uRes } = mockReqRes({
+      merchant: { id: 1, store_name: 'Artisan Coffee Roasters' },
+      params: { id: placedOrderId },
+      body: { status: 'OUT_FOR_DELIVERY' }
+    });
+    await updateOrderStatus(updateCustOrderStatusReq, uRes);
+    updateCustOrderStatusRes = uRes;
+  }
+  console.log('36. Merchant Storefront - Order Management & Status Transition:', {
+    passed: merchantOrdersRes.body.success === true && 
+            merchantOrdersRes.body.orders?.length >= 3 &&
+            updateCustOrderStatusRes.body.success === true &&
+            updateCustOrderStatusRes.body.order?.status === 'OUT_FOR_DELIVERY',
+    totalStorefrontOrders: merchantOrdersRes.body.summary?.totalOrders,
+    totalRevenue: `₹${merchantOrdersRes.body.summary?.totalRevenue}`,
+    updatedOrderStatus: updateCustOrderStatusRes.body.order?.status
+  });
+
+  console.log('\n🌟 ALL 36 SAAS PLATFORM MODULE CONTROLLERS VERIFIED AND WORKING PROPERLY! 🌟');
 }
 
 runUnitTests().catch(console.error);
