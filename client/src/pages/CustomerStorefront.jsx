@@ -3,6 +3,7 @@ import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { playOrderChime } from '../utils/sound';
 import { uploadToCloudinary } from '../utils/cloudinary';
+import VendorQRModal from '../components/VendorQRModal';
 import { 
   Store, 
   ShoppingBag, 
@@ -41,21 +42,37 @@ import {
   PlusCircle,
   Image as ImageIcon,
   Upload,
-  Loader2
+  Loader2,
+  QrCode
 } from 'lucide-react';
 
 export default function CustomerStorefront({ initialSubView = 'store' }) {
   const { merchant } = useAuth();
-  const tenantId = merchant?.id || 1;
+  
+  // Parse dynamic tenant/merchant ID and Table Number from URL (e.g. ?store=1&table=4)
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const paramTenant = urlParams?.get('store') || urlParams?.get('merchantId') || urlParams?.get('merchant_id');
+  const paramTable = urlParams?.get('table');
+  const tenantId = paramTenant ? parseInt(paramTenant, 10) : (merchant?.id || 1);
 
   // Active sub-view: 'store' (Live Customer Storefront) or 'orders' (Merchant Order Fulfillment)
   const [subView, setSubView] = useState(initialSubView);
+
+  // Vendor QR Code & Table Standee Modal
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   useEffect(() => {
     if (initialSubView) {
       setSubView(initialSubView);
     }
   }, [initialSubView]);
+
+  useEffect(() => {
+    if (paramTable) {
+      setOrderType('dine_in');
+      setTableNumber(paramTable);
+    }
+  }, [paramTable]);
 
   // Storefront Catalog & State
   const [loading, setLoading] = useState(true);
@@ -541,6 +558,15 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
           >
             <Camera className="w-3.5 h-3.5 text-indigo-400" />
             <span>📸 Change Shop Photo</span>
+          </button>
+
+          <button
+            onClick={() => setIsQRModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 text-xs font-bold transition-all shadow-sm active:scale-95"
+            title="View, download, or print your Store QR Code & Table Standee"
+          >
+            <QrCode className="w-3.5 h-3.5 text-sky-400" />
+            <span>📱 Store QR & Standee</span>
           </button>
 
           {/* View Switcher Pills */}
@@ -2173,6 +2199,13 @@ export default function CustomerStorefront({ initialSubView = 'store' }) {
           </div>
         </div>
       )}
+
+      {/* Vendor QR Code & Table Standee Modal */}
+      <VendorQRModal 
+        isOpen={isQRModalOpen} 
+        onClose={() => setIsQRModalOpen(false)} 
+        merchant={merchant || storeInfo} 
+      />
     </div>
   );
 }

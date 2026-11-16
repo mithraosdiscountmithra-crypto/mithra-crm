@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import { uploadToCloudinary } from '../utils/cloudinary';
+import VendorQRModal from '../components/VendorQRModal';
 import { 
   Store, 
   User, 
@@ -18,11 +19,14 @@ import {
   Cloud, 
   Loader2, 
   Sparkles,
-  ExternalLink 
+  ExternalLink,
+  QrCode
 } from 'lucide-react';
 
 export default function Settings() {
   const { merchant, updateMerchant } = useAuth();
+
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   const [storeName, setStoreName] = useState(merchant?.store_name || '');
   const [ownerName, setOwnerName] = useState(merchant?.owner_name || '');
@@ -544,6 +548,37 @@ export default function Settings() {
         )}
       </div>
 
+      {/* Vendor Storefront QR Code & Table Standee Card */}
+      <div className="p-6 rounded-3xl border border-sky-500/30 bg-slate-900/80 space-y-4 shadow-xl">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+              <QrCode className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <span>Digital QR Code & Dining Table Standee</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                  Customer Ordering
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Generate high-resolution scannable QR codes, send on WhatsApp, or print table standees with table numbers.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsQRModalOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-xs transition shadow-lg shadow-sky-500/20 active:scale-95 shrink-0"
+          >
+            <QrCode className="w-4 h-4" />
+            <span>Open QR Code & Standee Generator</span>
+          </button>
+        </div>
+      </div>
+
       {/* Database & Multi-Tenant Info */}
       <div className="p-6 rounded-3xl border border-slate-800 bg-slate-900/60 space-y-4">
         <div className="flex items-center gap-2.5">
@@ -554,6 +589,13 @@ export default function Settings() {
           This SaaS uses tenant-scoped database relations. Each query enforces <code className="text-sky-300">merchant_id = {merchant?.id}</code> to prevent any cross-tenant data leaks. Customer phone numbers are uniquely scoped per merchant with <code className="text-sky-300">UNIQUE (merchant_id, phone)</code>.
         </p>
       </div>
+
+      {/* Vendor QR Code & Table Standee Modal */}
+      <VendorQRModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+        merchant={merchant}
+      />
     </div>
   );
 }
