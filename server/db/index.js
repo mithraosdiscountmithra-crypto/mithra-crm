@@ -97,24 +97,24 @@ class MemoryStore {
       store_name: "Artisan Coffee Roasters",
       owner_name: "Sarah Jenkins",
       category: "Cafe & Roastery",
-      phone: "+1-555-0199",
+      phone: "+91-98450-12345",
       email: "demo@artisancoffee.com",
       password_hash: demoPasswordHash,
-      address: "450 Market Street, Suite 10",
-      city: "San Francisco",
+      address: "100 Specialty Way, Indiranagar",
+      city: "Bengaluru",
       is_active: true,
       created_at: new Date('2026-01-15T08:00:00Z'),
       updated_at: new Date('2026-01-15T08:00:00Z')
     };
     this.merchants.push(merchant);
 
-    // Seed Membership Plans
+    // Seed Membership Plans (All in ₹)
     const plans = [
       {
         id: this.planSeq++,
         merchant_id: merchant.id,
         plan_name: "Coffee Club Basic",
-        price: 19.99,
+        price: 499.00,
         validity_months: 6,
         discount_percent: 10.0,
         benefits_description: "10% off on all espresso & bakery items + free size upgrade on Tuesdays",
@@ -125,7 +125,7 @@ class MemoryStore {
         id: this.planSeq++,
         merchant_id: merchant.id,
         plan_name: "Gold Brew Connoisseur",
-        price: 49.99,
+        price: 1199.00,
         validity_months: 12,
         discount_percent: 20.0,
         benefits_description: "20% off all beverages & merchandise, priority mobile ordering & birthday gift",
@@ -136,7 +136,7 @@ class MemoryStore {
         id: this.planSeq++,
         merchant_id: merchant.id,
         plan_name: "VIP Roaster Pass",
-        price: 99.00,
+        price: 2499.00,
         validity_months: 12,
         discount_percent: 25.0,
         benefits_description: "25% discount, complimentary pour-over tasting monthly, free 250g bean bag",
@@ -146,7 +146,7 @@ class MemoryStore {
     ];
     this.membership_plans.push(...plans);
 
-    // Seed Customers
+    // Seed Customers (Realistic Indian retail patrons)
     const customers = [
       {
         id: this.customerSeq++,
@@ -163,7 +163,7 @@ class MemoryStore {
         name: "Emily Watson",
         phone: "5559876543",
         birthday: "1988-11-23",
-        anniversary: null,
+        anniversary: "2020-11-20",
         created_at: new Date('2026-02-10')
       },
       {
@@ -183,15 +183,33 @@ class MemoryStore {
         birthday: "1990-08-12",
         anniversary: null,
         created_at: new Date('2026-03-15')
+      },
+      {
+        id: this.customerSeq++,
+        merchant_id: merchant.id,
+        name: "Priya Sharma",
+        phone: "9876541122",
+        birthday: "1994-11-25",
+        anniversary: null,
+        created_at: new Date('2026-03-20')
+      },
+      {
+        id: this.customerSeq++,
+        merchant_id: merchant.id,
+        name: "Rohan Verma",
+        phone: "9988776655",
+        birthday: "1991-07-19",
+        anniversary: "2019-12-08",
+        created_at: new Date('2026-04-01')
       }
     ];
     this.customers.push(...customers);
 
-    // Seed Customer Memberships
+    // Seed Customer Memberships (Active VIP & Basic Tiers)
     const memberships = [
       {
         id: this.membershipSeq++,
-        customer_id: customers[0].id,
+        customer_id: customers[0].id, // Alex Rivera
         plan_id: plans[1].id, // Gold (20%)
         start_date: '2026-01-01',
         expiry_date: '2027-01-01',
@@ -200,7 +218,7 @@ class MemoryStore {
       },
       {
         id: this.membershipSeq++,
-        customer_id: customers[1].id,
+        customer_id: customers[1].id, // Emily Watson
         plan_id: plans[0].id, // Basic (10%)
         start_date: '2026-02-15',
         expiry_date: '2026-08-15',
@@ -209,55 +227,79 @@ class MemoryStore {
       },
       {
         id: this.membershipSeq++,
-        customer_id: customers[2].id,
+        customer_id: customers[2].id, // David Chen
         plan_id: plans[2].id, // VIP (25%)
         start_date: '2026-03-01',
         expiry_date: '2027-03-01',
         status: 'ACTIVE',
         created_at: new Date()
+      },
+      {
+        id: this.membershipSeq++,
+        customer_id: customers[5].id, // Rohan Verma
+        plan_id: plans[2].id, // VIP (25%)
+        start_date: '2026-04-01',
+        expiry_date: '2027-04-01',
+        status: 'ACTIVE',
+        created_at: new Date()
       }
-      // Customer 3 (Sophia) has no active plan (regular customer)
     ];
     this.customer_memberships.push(...memberships);
 
-    // Seed Redemptions
+    // Seed Redemptions (Cashier POS Billing with ₹ Indian Rupee pricing)
     const redemptions = [
       {
         id: this.redemptionSeq++,
         merchant_id: merchant.id,
         customer_id: customers[0].id,
-        bill_amount: 32.50,
-        discount_given: 6.50,
+        bill_amount: 1450.00,
+        discount_given: 290.00,
         redeemed_at: new Date(Date.now() - 3600 * 1000 * 2)
       },
       {
         id: this.redemptionSeq++,
         merchant_id: merchant.id,
         customer_id: customers[1].id,
-        bill_amount: 18.00,
-        discount_given: 1.80,
+        bill_amount: 680.00,
+        discount_given: 68.00,
         redeemed_at: new Date(Date.now() - 3600 * 1000 * 18)
       },
       {
         id: this.redemptionSeq++,
         merchant_id: merchant.id,
         customer_id: customers[2].id,
-        bill_amount: 85.00,
-        discount_given: 21.25,
+        bill_amount: 2850.00,
+        discount_given: 712.50,
         redeemed_at: new Date(Date.now() - 3600 * 1000 * 36)
       },
       {
         id: this.redemptionSeq++,
         merchant_id: merchant.id,
         customer_id: customers[0].id,
-        bill_amount: 45.00,
-        discount_given: 9.00,
+        bill_amount: 1950.00,
+        discount_given: 390.00,
         redeemed_at: new Date(Date.now() - 3600 * 1000 * 72)
+      },
+      {
+        id: this.redemptionSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[1].id,
+        bill_amount: 840.00,
+        discount_given: 84.00,
+        redeemed_at: new Date(Date.now() - 3600 * 1000 * 96)
+      },
+      {
+        id: this.redemptionSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[5].id,
+        bill_amount: 3200.00,
+        discount_given: 800.00,
+        redeemed_at: new Date(Date.now() - 3600 * 1000 * 120)
       }
     ];
     this.redemptions.push(...redemptions);
 
-    // Seed Demo Products for Merchant
+    // Seed Demo Products for Merchant (Retail & Roastery inventory in ₹)
     const products = [
       {
         id: this.productSeq++,
@@ -265,8 +307,8 @@ class MemoryStore {
         product_name: "Ethiopian Yirgacheffe Whole Beans 250g",
         sku: "COF-ETH-250",
         category: "Coffee Beans",
-        purchase_price: 7.50,
-        selling_price: 18.00,
+        purchase_price: 350.00,
+        selling_price: 650.00,
         stock_quantity: 42,
         low_stock_threshold: 10,
         unit: "bags",
@@ -279,8 +321,8 @@ class MemoryStore {
         product_name: "House Espresso Blend 1kg",
         sku: "COF-ESP-1KG",
         category: "Coffee Beans",
-        purchase_price: 14.00,
-        selling_price: 32.00,
+        purchase_price: 650.00,
+        selling_price: 1250.00,
         stock_quantity: 3,
         low_stock_threshold: 8,
         unit: "bags",
@@ -293,8 +335,8 @@ class MemoryStore {
         product_name: "Barista Series Oat Milk 1L",
         sku: "ING-OAT-1L",
         category: "Ingredients",
-        purchase_price: 1.80,
-        selling_price: 4.50,
+        purchase_price: 140.00,
+        selling_price: 260.00,
         stock_quantity: 4,
         low_stock_threshold: 12,
         unit: "cartons",
@@ -307,8 +349,8 @@ class MemoryStore {
         product_name: "Ceramic V60 Dripper #02",
         sku: "BRW-V60-02",
         category: "Brewing Gear",
-        purchase_price: 12.00,
-        selling_price: 26.00,
+        purchase_price: 850.00,
+        selling_price: 1650.00,
         stock_quantity: 15,
         low_stock_threshold: 5,
         unit: "pcs",
@@ -321,8 +363,8 @@ class MemoryStore {
         product_name: "Double-Walled Glass Tumbler 16oz",
         sku: "MRCH-TMB-16",
         category: "Merchandise",
-        purchase_price: 8.00,
-        selling_price: 22.00,
+        purchase_price: 420.00,
+        selling_price: 850.00,
         stock_quantity: 2,
         low_stock_threshold: 6,
         unit: "pcs",
@@ -335,25 +377,81 @@ class MemoryStore {
         product_name: "Paper Coffee Filters (Pack of 100)",
         sku: "ACC-FLT-100",
         category: "Accessories",
-        purchase_price: 2.50,
-        selling_price: 6.50,
+        purchase_price: 110.00,
+        selling_price: 240.00,
         stock_quantity: 35,
         low_stock_threshold: 10,
         unit: "packs",
         created_at: new Date('2026-02-20T10:00:00Z'),
         updated_at: new Date('2026-02-20T10:00:00Z')
+      },
+      {
+        id: this.productSeq++,
+        merchant_id: merchant.id,
+        product_name: "Vanilla Hazelnut Syrup 750ml",
+        sku: "SYR-VAN-750",
+        category: "Syrups",
+        purchase_price: 320.00,
+        selling_price: 620.00,
+        stock_quantity: 18,
+        low_stock_threshold: 5,
+        unit: "bottles",
+        created_at: new Date('2026-02-22T10:00:00Z'),
+        updated_at: new Date('2026-02-22T10:00:00Z')
+      },
+      {
+        id: this.productSeq++,
+        merchant_id: merchant.id,
+        product_name: "Monsooned Malabar AA Dark Roast 500g",
+        sku: "COF-MAL-500",
+        category: "Coffee Beans",
+        purchase_price: 380.00,
+        selling_price: 720.00,
+        stock_quantity: 25,
+        low_stock_threshold: 6,
+        unit: "bags",
+        created_at: new Date('2026-02-24T10:00:00Z'),
+        updated_at: new Date('2026-02-24T10:00:00Z')
+      },
+      {
+        id: this.productSeq++,
+        merchant_id: merchant.id,
+        product_name: "Artisanal Butter Croissant (Box of 4)",
+        sku: "BAK-CRS-04",
+        category: "Bakery",
+        purchase_price: 120.00,
+        selling_price: 240.00,
+        stock_quantity: 14,
+        low_stock_threshold: 4,
+        unit: "boxes",
+        created_at: new Date('2026-02-25T10:00:00Z'),
+        updated_at: new Date('2026-02-25T10:00:00Z')
+      },
+      {
+        id: this.productSeq++,
+        merchant_id: merchant.id,
+        product_name: "Signature Cold Brew Bottle 300ml",
+        sku: "BEV-CBW-300",
+        category: "Beverages",
+        purchase_price: 90.00,
+        selling_price: 210.00,
+        stock_quantity: 20,
+        low_stock_threshold: 5,
+        unit: "bottles",
+        created_at: new Date('2026-02-26T10:00:00Z'),
+        updated_at: new Date('2026-02-26T10:00:00Z')
       }
     ];
     this.products.push(...products);
 
-    // Seed Demo Customer Ledgers / Udhaar
+    // Seed Demo Customer Ledgers / Digital Udhaar (All values in ₹)
     const ledgers = [
       {
         id: this.ledgerSeq++,
         merchant_id: merchant.id,
         customer_id: customers[0].id, // Alex Rivera
         transaction_type: 'GIVEN',
-        amount: 45.00,
+        amount: 1250.00,
         notes: '2x Ethiopian beans & bakery box on credit',
         due_date: '2026-11-20',
         status: 'PENDING',
@@ -364,8 +462,8 @@ class MemoryStore {
         merchant_id: merchant.id,
         customer_id: customers[1].id, // Emily Watson
         transaction_type: 'GIVEN',
-        amount: 25.00,
-        notes: 'Breakfast sandwich & latte',
+        amount: 580.00,
+        notes: 'Breakfast croissant & artisan latte',
         due_date: '2026-11-10',
         status: 'SETTLED',
         created_at: new Date(Date.now() - 3600 * 1000 * 120)
@@ -375,8 +473,8 @@ class MemoryStore {
         merchant_id: merchant.id,
         customer_id: customers[1].id, // Emily Watson
         transaction_type: 'PAID',
-        amount: 25.00,
-        notes: 'Paid via UPI/Cash',
+        amount: 580.00,
+        notes: 'Paid via UPI/GPay',
         due_date: null,
         status: 'SETTLED',
         created_at: new Date(Date.now() - 3600 * 1000 * 48)
@@ -386,7 +484,7 @@ class MemoryStore {
         merchant_id: merchant.id,
         customer_id: customers[2].id, // David Chen
         transaction_type: 'GIVEN',
-        amount: 70.00,
+        amount: 2100.00,
         notes: 'Monthly coffee subscription renewal credit',
         due_date: '2026-11-25',
         status: 'PENDING',
@@ -397,26 +495,37 @@ class MemoryStore {
         merchant_id: merchant.id,
         customer_id: customers[2].id, // David Chen
         transaction_type: 'PAID',
-        amount: 30.00,
-        notes: 'Part payment received',
+        amount: 900.00,
+        notes: 'Part payment received via UPI',
         due_date: null,
         status: 'SETTLED',
         created_at: new Date(Date.now() - 3600 * 1000 * 4)
+      },
+      {
+        id: this.ledgerSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[5].id, // Rohan Verma
+        transaction_type: 'GIVEN',
+        amount: 1712.00,
+        notes: 'Cold Brew reserve crate on store credit',
+        due_date: '2026-11-30',
+        status: 'PENDING',
+        created_at: new Date(Date.now() - 3600 * 1000 * 12)
       }
     ];
     this.customer_ledgers.push(...ledgers);
 
-    // Seed Expenses
+    // Seed Expenses (Monthly Operating & Fixed Shop Costs in ₹)
     const expenses = [
       {
         id: this.expenseSeq++,
         merchant_id: merchant.id,
         title: "Monthly Roastery Space Rent",
         category: "Rent",
-        amount: 850.00,
+        amount: 45000.00,
         expense_date: new Date(Date.now() - 3600 * 1000 * 24 * 12).toISOString().split('T')[0],
         payment_method: "Bank Transfer",
-        notes: "Downtown retail space rent",
+        notes: "Indiranagar flagship roastery space rent",
         created_at: new Date()
       },
       {
@@ -424,10 +533,10 @@ class MemoryStore {
         merchant_id: merchant.id,
         title: "Specialty Green Coffee Bean Sacks",
         category: "Inventory",
-        amount: 320.00,
+        amount: 18500.00,
         expense_date: new Date(Date.now() - 3600 * 1000 * 24 * 5).toISOString().split('T')[0],
         payment_method: "Card",
-        notes: "60kg raw green beans from importer",
+        notes: "120kg raw green beans from Coorg estate importer",
         created_at: new Date()
       },
       {
@@ -435,35 +544,57 @@ class MemoryStore {
         merchant_id: merchant.id,
         title: "Electricity & Roaster Gas Bill",
         category: "Utilities",
-        amount: 115.00,
+        amount: 6800.00,
         expense_date: new Date(Date.now() - 3600 * 1000 * 24 * 7).toISOString().split('T')[0],
         payment_method: "UPI",
-        notes: "Commercial power utilities",
+        notes: "Commercial power & LPG cylinder utilities",
         created_at: new Date()
       },
       {
         id: this.expenseSeq++,
         merchant_id: merchant.id,
-        title: "Espresso Machine Tune-up & Filters",
+        title: "Espresso Machine Quarterly Tune-up",
         category: "Maintenance",
-        amount: 65.00,
+        amount: 3500.00,
         expense_date: new Date(Date.now() - 3600 * 1000 * 24 * 2).toISOString().split('T')[0],
         payment_method: "Cash",
-        notes: "Gasket & grouphead filter replacement",
+        notes: "Gasket, pressure gauge & grouphead filter replacement",
+        created_at: new Date()
+      },
+      {
+        id: this.expenseSeq++,
+        merchant_id: merchant.id,
+        title: "Compostable Takeaway Cups & Kraft Bags",
+        category: "Packaging",
+        amount: 4200.00,
+        expense_date: new Date(Date.now() - 3600 * 1000 * 24 * 3).toISOString().split('T')[0],
+        payment_method: "Card",
+        notes: "Eco-friendly branded packaging batch",
+        created_at: new Date()
+      },
+      {
+        id: this.expenseSeq++,
+        merchant_id: merchant.id,
+        title: "High-Speed Commercial Fiber Internet",
+        category: "Utilities",
+        amount: 1999.00,
+        expense_date: new Date(Date.now() - 3600 * 1000 * 24 * 10).toISOString().split('T')[0],
+        payment_method: "UPI",
+        notes: "Airtel Xstream 300 Mbps fiber & POS backup line",
         created_at: new Date()
       }
     ];
     this.expenses.push(...expenses);
 
-    // Seed Staff
+    // Seed Staff (Roster with Indian Rupee Monthly Salaries)
     const staffMembers = [
       {
         id: this.staffSeq++,
         merchant_id: merchant.id,
         name: "Marcus Brody",
-        role: "Head Barista",
-        phone: "+1-555-0811",
-        monthly_salary: 2800.00,
+        role: "Head Barista & Roaster",
+        phone: "+91-98765-01111",
+        monthly_salary: 38000.00,
         joining_date: "2025-06-01",
         is_active: true,
         created_at: new Date()
@@ -472,9 +603,9 @@ class MemoryStore {
         id: this.staffSeq++,
         merchant_id: merchant.id,
         name: "Jessica Lin",
-        role: "Store Cashier & Lead",
-        phone: "+1-555-0822",
-        monthly_salary: 2200.00,
+        role: "Store Cashier & POS Lead",
+        phone: "+91-98765-02222",
+        monthly_salary: 26000.00,
         joining_date: "2025-08-15",
         is_active: true,
         created_at: new Date()
@@ -483,10 +614,21 @@ class MemoryStore {
         id: this.staffSeq++,
         merchant_id: merchant.id,
         name: "Carlos Mendez",
-        role: "Roastery Assistant",
-        phone: "+1-555-0833",
-        monthly_salary: 1900.00,
+        role: "Roastery Operations Assistant",
+        phone: "+91-98765-03333",
+        monthly_salary: 22000.00,
         joining_date: "2026-01-10",
+        is_active: true,
+        created_at: new Date()
+      },
+      {
+        id: this.staffSeq++,
+        merchant_id: merchant.id,
+        name: "Anita Desai",
+        role: "Shift Supervisor & Inventory Lead",
+        phone: "+91-98765-04444",
+        monthly_salary: 32000.00,
+        joining_date: "2025-11-01",
         is_active: true,
         created_at: new Date()
       }
@@ -503,7 +645,7 @@ class MemoryStore {
         attendance_date: todayStr,
         status: "PRESENT",
         check_in_time: "07:45 AM",
-        notes: "Opened morning shift",
+        notes: "Opened morning shift & roaster calibration",
         created_at: new Date()
       },
       {
@@ -513,7 +655,7 @@ class MemoryStore {
         attendance_date: todayStr,
         status: "PRESENT",
         check_in_time: "08:30 AM",
-        notes: "POS register on duty",
+        notes: "Front desk POS register on duty",
         created_at: new Date()
       },
       {
@@ -525,11 +667,21 @@ class MemoryStore {
         check_in_time: "12:00 PM",
         notes: "Afternoon bean packing shift",
         created_at: new Date()
+      },
+      {
+        id: this.attendanceSeq++,
+        merchant_id: merchant.id,
+        staff_id: staffMembers[3].id,
+        attendance_date: todayStr,
+        status: "PRESENT",
+        check_in_time: "08:00 AM",
+        notes: "Inventory inspection & supplier receiving",
+        created_at: new Date()
       }
     ];
     this.staff_attendance.push(...attendanceRecords);
 
-    // Seed WhatsApp Campaigns
+    // Seed WhatsApp Campaigns (AiSensy integrated broadcasts)
     const campaigns = [
       {
         id: this.campaignSeq++,
@@ -539,7 +691,7 @@ class MemoryStore {
         message_template: "Hey {customer_name}! Enjoy our Weekend Special at {store_name}: 20% off all pour-over specials and bean bags! Show this message at checkout.",
         discount_offer: "20% OFF Beans",
         status: "SENT",
-        sent_count: 4,
+        sent_count: 6,
         created_at: new Date(Date.now() - 3600 * 1000 * 48)
       },
       {
@@ -550,23 +702,34 @@ class MemoryStore {
         message_template: "Dear {customer_name}, as a valued loyalty member of {store_name}, your complimentary private tasting pass is ready this Friday evening!",
         discount_offer: "Free Tasting Pass",
         status: "SENT",
-        sent_count: 3,
+        sent_count: 4,
         created_at: new Date(Date.now() - 3600 * 1000 * 24)
+      },
+      {
+        id: this.campaignSeq++,
+        merchant_id: merchant.id,
+        campaign_name: "Festive Scratch Card Blast (AiSensy)",
+        target_audience: "ALL",
+        message_template: "Namaste {customer_name}! Reveal your exclusive Festive Scratch Card reward at {store_name}: up to ₹250 cashback and complimentary treats!",
+        discount_offer: "Scratch Card Special",
+        status: "SENT",
+        sent_count: 6,
+        created_at: new Date(Date.now() - 3600 * 1000 * 12)
       }
     ];
     this.whatsapp_campaigns.push(...campaigns);
 
-    // Seed Suppliers
+    // Seed Suppliers (Indian roastery & equipment vendors)
     const suppliers = [
       {
         id: this.supplierSeq++,
         merchant_id: merchant.id,
-        name: "Andean Specialty Beans Co.",
+        name: "Malabar & Coorg Specialty Beans Co.",
         contact_person: "Mateo Vargas",
-        phone: "+1-555-7711",
-        email: "orders@andeanbeans.com",
-        address: "450 Export Way, Miami, FL",
-        gst_or_tax_id: "US-TAX-89211",
+        phone: "+91-98440-11771",
+        email: "orders@malabarbeans.in",
+        address: "45 Plantations Rd, Madikeri, Coorg, KA",
+        gst_or_tax_id: "29AABCM89211Z1",
         payment_terms: "Net 30",
         is_active: true,
         created_at: new Date()
@@ -576,10 +739,10 @@ class MemoryStore {
         merchant_id: merchant.id,
         name: "Barista Gear & Dairy Supplies",
         contact_person: "Rachel Green",
-        phone: "+1-555-7722",
-        email: "supplies@baristagear.com",
-        address: "120 Logistics Blvd, Chicago, IL",
-        gst_or_tax_id: "US-TAX-44102",
+        phone: "+91-98440-22772",
+        email: "supplies@baristagear.in",
+        address: "120 Logistics Blvd, Peenya Indl Area, Bengaluru",
+        gst_or_tax_id: "29AADCB44102Q1",
         payment_terms: "Net 15",
         is_active: true,
         created_at: new Date()
@@ -587,18 +750,18 @@ class MemoryStore {
     ];
     this.suppliers.push(...suppliers);
 
-    // Seed Purchase Orders & Items
+    // Seed Purchase Orders & Line Items (Procurement in ₹)
     const po1 = {
       id: this.poSeq++,
       merchant_id: merchant.id,
       supplier_id: suppliers[0].id,
       po_number: "PO-202611-001",
       status: "RECEIVED",
-      total_amount: 450.00,
+      total_amount: 14500.00,
       order_date: new Date(Date.now() - 3600 * 1000 * 24 * 6).toISOString().split('T')[0],
       expected_delivery_date: new Date(Date.now() - 3600 * 1000 * 24 * 3).toISOString().split('T')[0],
       received_date: new Date(Date.now() - 3600 * 1000 * 24 * 2).toISOString().split('T')[0],
-      notes: "Monthly specialty roast stock",
+      notes: "Monthly specialty roast bean stock",
       created_at: new Date(Date.now() - 3600 * 1000 * 24 * 6)
     };
     this.purchase_orders.push(po1);
@@ -610,18 +773,18 @@ class MemoryStore {
         product_id: 1,
         item_name: "Ethiopian Yirgacheffe Single Origin 1kg",
         quantity: 25,
-        unit_cost: 12.00,
-        subtotal: 300.00,
+        unit_cost: 350.00,
+        subtotal: 8750.00,
         created_at: new Date()
       },
       {
         id: this.poItemSeq++,
         purchase_order_id: po1.id,
-        product_id: 2,
-        item_name: "Colombia Supremo Dark Roast 500g",
+        product_id: 8,
+        item_name: "Monsooned Malabar AA Dark Roast 500g",
         quantity: 15,
-        unit_cost: 10.00,
-        subtotal: 150.00,
+        unit_cost: 380.00,
+        subtotal: 5750.00,
         created_at: new Date()
       }
     ];
@@ -633,11 +796,11 @@ class MemoryStore {
       supplier_id: suppliers[1].id,
       po_number: "PO-202611-002",
       status: "SENT",
-      total_amount: 280.00,
+      total_amount: 8400.00,
       order_date: new Date(Date.now() - 3600 * 1000 * 24 * 1).toISOString().split('T')[0],
       expected_delivery_date: new Date(Date.now() + 3600 * 1000 * 24 * 3).toISOString().split('T')[0],
       received_date: null,
-      notes: "Restock milk frothers and double wall tumblers",
+      notes: "Restock double-wall tumblers and stainless frothing pitchers",
       created_at: new Date(Date.now() - 3600 * 1000 * 24 * 1)
     };
     this.purchase_orders.push(po2);
@@ -648,9 +811,9 @@ class MemoryStore {
         purchase_order_id: po2.id,
         product_id: 5,
         item_name: "Double-Walled Glass Tumbler 16oz",
-        quantity: 20,
-        unit_cost: 7.00,
-        subtotal: 140.00,
+        quantity: 12,
+        unit_cost: 420.00,
+        subtotal: 5040.00,
         created_at: new Date()
       },
       {
@@ -658,15 +821,15 @@ class MemoryStore {
         purchase_order_id: po2.id,
         product_id: 6,
         item_name: "Stainless Steel Milk Frothing Pitcher",
-        quantity: 14,
-        unit_cost: 10.00,
-        subtotal: 140.00,
+        quantity: 8,
+        unit_cost: 420.00,
+        subtotal: 3360.00,
         created_at: new Date()
       }
     ];
     this.purchase_order_items.push(...po2Items);
 
-    // Seed Supplier Ledgers
+    // Seed Supplier Ledgers / Khata
     const supplierLedgers = [
       {
         id: this.supplierLedgerSeq++,
@@ -674,8 +837,8 @@ class MemoryStore {
         supplier_id: suppliers[0].id,
         purchase_order_id: po1.id,
         transaction_type: "BILL",
-        amount: 450.00,
-        notes: "Invoice for Andean Beans shipment",
+        amount: 14500.00,
+        notes: "Invoice for Malabar & Coorg beans shipment",
         reference_no: "PO-202611-001",
         payment_date: new Date(Date.now() - 3600 * 1000 * 24 * 6).toISOString().split('T')[0],
         payment_method: "BANK_TRANSFER",
@@ -688,9 +851,9 @@ class MemoryStore {
         supplier_id: suppliers[0].id,
         purchase_order_id: null,
         transaction_type: "PAYMENT",
-        amount: 250.00,
-        notes: "Partial wire payment against PO-202611-001",
-        reference_no: "TXN-BNK-9811",
+        amount: 8000.00,
+        notes: "Partial RTGS wire payment against PO-202611-001",
+        reference_no: "TXN-RTGS-9811",
         payment_date: new Date(Date.now() - 3600 * 1000 * 24 * 1).toISOString().split('T')[0],
         payment_method: "BANK_TRANSFER",
         status: "SETTLED",
@@ -702,7 +865,7 @@ class MemoryStore {
         supplier_id: suppliers[1].id,
         purchase_order_id: po2.id,
         transaction_type: "BILL",
-        amount: 280.00,
+        amount: 8400.00,
         notes: "Invoice for Barista Gear order",
         reference_no: "PO-202611-002",
         payment_date: new Date(Date.now() - 3600 * 1000 * 24 * 1).toISOString().split('T')[0],
@@ -713,7 +876,7 @@ class MemoryStore {
     ];
     this.supplier_ledgers.push(...supplierLedgers);
 
-    // Seed Debtor Call Logs
+    // Seed Debtor Call Logs (AI Voice Debtor Callback & Link Dispatches)
     const callLogs = [
       {
         id: this.callLogSeq++,
@@ -722,8 +885,8 @@ class MemoryStore {
         call_sid: "CALL-VOICE-8811",
         call_status: "COMPLETED",
         intent: "PROMISE_TO_PAY",
-        transcript: "AI: Hello Alex, this is Artisan Coffee calling regarding your balance. Alex: I will be there this Friday to pay the $45. AI: Perfect, noted for Friday!",
-        summary: "Customer promised to pay $45 balance on Friday.",
+        transcript: "AI: Namaste Alex, this is Artisan Coffee calling regarding your pending ₹1,250 balance. Alex: I will be there this Friday to pay the amount. AI: Perfect, noted for Friday!",
+        summary: "Customer promised to pay ₹1,250 balance on Friday.",
         promised_date: new Date(Date.now() + 3600 * 1000 * 24 * 4).toISOString().split('T')[0],
         callback_scheduled_at: null,
         payment_link_sent: false,
@@ -738,13 +901,13 @@ class MemoryStore {
         call_sid: "CALL-VOICE-8822",
         call_status: "COMPLETED",
         intent: "REQUEST_PAYMENT_LINK",
-        transcript: "AI: Hello David, calling regarding your $40 coffee subscription ledger. David: Can you send me a UPI payment link on WhatsApp? AI: Dispatching your UPI link right now via WhatsApp!",
+        transcript: "AI: Hello David, calling regarding your ₹1,200 coffee subscription ledger. David: Can you send me a UPI payment link on WhatsApp? AI: Dispatching your UPI link right now via WhatsApp!",
         summary: "Debtor requested WhatsApp UPI payment link.",
         promised_date: null,
         callback_scheduled_at: null,
         payment_link_sent: true,
-        payment_link_url: "https://pay.loyaltyhub.app/upi?pa=artisan@upi&am=40.00",
-        upi_intent_string: "upi://pay?pa=artisan@upi&pn=Artisan%20Coffee&am=40.00&cu=INR&tn=Khata-Settlement-3",
+        payment_link_url: "https://pay.loyaltyhub.app/upi?pa=artisan@upi&am=1200.00",
+        upi_intent_string: "upi://pay?pa=artisan@upi&pn=Artisan%20Coffee&am=1200.00&cu=INR&tn=Khata-Settlement-3",
         created_at: new Date(Date.now() - 3600 * 1000 * 3)
       },
       {
@@ -766,7 +929,7 @@ class MemoryStore {
     ];
     this.debtor_call_logs.push(...callLogs);
 
-    // Seed Digital Storefront Customer Orders
+    // Seed Digital Storefront Customer Orders (Catalog Orders in ₹)
     const ord1 = {
       id: this.orderSeq++,
       merchant_id: merchant.id,
@@ -774,15 +937,15 @@ class MemoryStore {
       order_number: "DM-ORD-101",
       customer_name: "Alex Rivera",
       customer_phone: "5551234567",
-      customer_address: "742 Evergreen Terrace, Apt 4B",
+      customer_address: "742 Evergreen Terrace, Apt 4B, Indiranagar, Bengaluru",
       order_type: "delivery",
       payment_mode: "online",
-      subtotal: 65.00,
-      discount_amount: 13.00,
+      subtotal: 1300.00,
+      discount_amount: 260.00,
       membership_discount_percent: 20.00,
-      total_amount: 52.00,
+      total_amount: 1040.00,
       status: "CONFIRMED",
-      notes: "Ring doorbell twice",
+      notes: "Ring doorbell twice, leave with reception",
       created_at: new Date(Date.now() - 3600 * 1000 * 2)
     };
 
@@ -791,20 +954,10 @@ class MemoryStore {
         id: this.orderItemSeq++,
         order_id: ord1.id,
         product_id: 1,
-        product_name: "House Espresso Blend 1kg",
+        product_name: "Ethiopian Yirgacheffe Whole Beans 250g",
         quantity: 2,
-        unit_price: 22.50,
-        subtotal: 45.00,
-        created_at: new Date(Date.now() - 3600 * 1000 * 2)
-      },
-      {
-        id: this.orderItemSeq++,
-        order_id: ord1.id,
-        product_id: 3,
-        product_name: "Vanilla Hazelnut Syrup 750ml",
-        quantity: 1,
-        unit_price: 20.00,
-        subtotal: 20.00,
+        unit_price: 650.00,
+        subtotal: 1300.00,
         created_at: new Date(Date.now() - 3600 * 1000 * 2)
       }
     ];
@@ -819,10 +972,10 @@ class MemoryStore {
       customer_address: null,
       order_type: "pickup",
       payment_mode: "khata",
-      subtotal: 35.00,
-      discount_amount: 8.75,
+      subtotal: 850.00,
+      discount_amount: 212.50,
       membership_discount_percent: 25.00,
-      total_amount: 26.25,
+      total_amount: 637.50,
       status: "PREPARING",
       notes: "Pick up around 4 PM",
       created_at: new Date(Date.now() - 3600 * 1000 * 1)
@@ -835,16 +988,100 @@ class MemoryStore {
         product_id: 5,
         product_name: "Double-Walled Glass Tumbler 16oz",
         quantity: 1,
-        unit_price: 35.00,
-        subtotal: 35.00,
+        unit_price: 850.00,
+        subtotal: 850.00,
         created_at: new Date(Date.now() - 3600 * 1000 * 1)
       }
     ];
 
-    this.customer_orders.push(ord1, ord2);
-    this.customer_order_items.push(...ord1Items, ...ord2Items);
+    const ord3 = {
+      id: this.orderSeq++,
+      merchant_id: merchant.id,
+      customer_id: customers[1].id, // Emily Watson
+      order_number: "DM-ORD-103",
+      customer_name: "Emily Watson",
+      customer_phone: "5559876543",
+      customer_address: "12 Palm Grove, Koramangala 4th Block, Bengaluru",
+      order_type: "delivery",
+      payment_mode: "online",
+      subtotal: 960.00,
+      discount_amount: 96.00,
+      membership_discount_percent: 10.00,
+      total_amount: 864.00,
+      status: "OUT_FOR_DELIVERY",
+      notes: "Call on arrival",
+      created_at: new Date(Date.now() - 3600 * 1000 * 4)
+    };
 
-    // Seed Digital Scratch Cards & Coupons (Marketing Pillar)
+    const ord3Items = [
+      {
+        id: this.orderItemSeq++,
+        order_id: ord3.id,
+        product_id: 8,
+        product_name: "Monsooned Malabar AA Dark Roast 500g",
+        quantity: 1,
+        unit_price: 720.00,
+        subtotal: 720.00,
+        created_at: new Date(Date.now() - 3600 * 1000 * 4)
+      },
+      {
+        id: this.orderItemSeq++,
+        order_id: ord3.id,
+        product_id: 6,
+        product_name: "Paper Coffee Filters (Pack of 100)",
+        quantity: 1,
+        unit_price: 240.00,
+        subtotal: 240.00,
+        created_at: new Date(Date.now() - 3600 * 1000 * 4)
+      }
+    ];
+
+    const ord4 = {
+      id: this.orderSeq++,
+      merchant_id: merchant.id,
+      customer_id: customers[3].id, // Sophia Martinez
+      order_number: "DM-ORD-104",
+      customer_name: "Sophia Martinez",
+      customer_phone: "5554567890",
+      customer_address: null,
+      order_type: "pickup",
+      payment_mode: "cash",
+      subtotal: 450.00,
+      discount_amount: 0.00,
+      membership_discount_percent: 0.00,
+      total_amount: 450.00,
+      status: "COMPLETED",
+      notes: "Counter takeaway",
+      created_at: new Date(Date.now() - 3600 * 1000 * 8)
+    };
+
+    const ord4Items = [
+      {
+        id: this.orderItemSeq++,
+        order_id: ord4.id,
+        product_id: 9,
+        product_name: "Artisanal Butter Croissant (Box of 4)",
+        quantity: 1,
+        unit_price: 240.00,
+        subtotal: 240.00,
+        created_at: new Date(Date.now() - 3600 * 1000 * 8)
+      },
+      {
+        id: this.orderItemSeq++,
+        order_id: ord4.id,
+        product_id: 10,
+        product_name: "Signature Cold Brew Bottle 300ml",
+        quantity: 1,
+        unit_price: 210.00,
+        subtotal: 210.00,
+        created_at: new Date(Date.now() - 3600 * 1000 * 8)
+      }
+    ];
+
+    this.customer_orders.push(ord1, ord2, ord3, ord4);
+    this.customer_order_items.push(...ord1Items, ...ord2Items, ...ord3Items, ...ord4Items);
+
+    // Seed Digital Scratch Cards & Coupons (Marketing Pillar in ₹)
     const coupons = [
       {
         id: this.couponSeq++,
@@ -859,7 +1096,7 @@ class MemoryStore {
         revealed_perk: null,
         expiry_date: "2026-12-31",
         usage_limit: 100,
-        used_count: 14,
+        used_count: 18,
         is_active: true,
         created_at: new Date()
       },
@@ -876,7 +1113,7 @@ class MemoryStore {
         revealed_perk: "Free Cold Brew with any Bagel",
         expiry_date: "2026-11-30",
         usage_limit: 50,
-        used_count: 8,
+        used_count: 12,
         is_active: true,
         created_at: new Date()
       },
@@ -893,14 +1130,48 @@ class MemoryStore {
         revealed_perk: "Complimentary Artisanal Dessert Slice",
         expiry_date: "2026-12-31",
         usage_limit: 50,
-        used_count: 5,
+        used_count: 8,
+        is_active: true,
+        created_at: new Date()
+      },
+      {
+        id: this.couponSeq++,
+        merchant_id: merchant.id,
+        code: "DIWALI20",
+        title: "Diwali Festive Scratch Card",
+        discount_type: "PERCENT",
+        discount_value: 20.00,
+        min_spend: 600.00,
+        max_discount: 300.00,
+        is_scratch_card: true,
+        revealed_perk: "₹150 Cashback on next visit",
+        expiry_date: "2026-12-31",
+        usage_limit: 75,
+        used_count: 15,
+        is_active: true,
+        created_at: new Date()
+      },
+      {
+        id: this.couponSeq++,
+        merchant_id: merchant.id,
+        code: "WELCOME150",
+        title: "Welcome First Order Discount",
+        discount_type: "FLAT",
+        discount_value: 150.00,
+        min_spend: 500.00,
+        max_discount: null,
+        is_scratch_card: false,
+        revealed_perk: null,
+        expiry_date: "2026-12-31",
+        usage_limit: 100,
+        used_count: 22,
         is_active: true,
         created_at: new Date()
       }
     ];
     this.coupons.push(...coupons);
 
-    // Seed Automated Greetings Queue (Marketing Pillar)
+    // Seed Automated Greetings Queue (Marketing Pillar WhatsApp Scheduler)
     const greetings = [
       {
         id: this.greetingSeq++,
@@ -943,6 +1214,34 @@ class MemoryStore {
         coupon_code: "BIRTHDAY100",
         sent_at: new Date(Date.now() - 3600 * 1000 * 24 * 6),
         created_at: new Date(Date.now() - 3600 * 1000 * 24 * 7)
+      },
+      {
+        id: this.greetingSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[4].id, // Priya Sharma
+        greeting_type: "BIRTHDAY",
+        event_date: "2026-11-25",
+        scheduled_date: "2026-11-25",
+        channel: "WHATSAPP",
+        message: "🎂 Happy Birthday Priya Sharma! Enjoy ₹100 off your coffee order with code BIRTHDAY100 at Artisan Coffee Roasters.",
+        status: "SCHEDULED",
+        coupon_code: "BIRTHDAY100",
+        sent_at: null,
+        created_at: new Date()
+      },
+      {
+        id: this.greetingSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[5].id, // Rohan Verma
+        greeting_type: "ANNIVERSARY",
+        event_date: "2026-12-08",
+        scheduled_date: "2026-12-08",
+        channel: "WHATSAPP",
+        message: "💍 Happy Anniversary Rohan! Thank you for choosing Artisan Coffee. Enjoy 25% off with code MITHRAGIFT25.",
+        status: "SCHEDULED",
+        coupon_code: "MITHRAGIFT25",
+        sent_at: null,
+        created_at: new Date()
       }
     ];
     this.customer_greetings.push(...greetings);
@@ -958,7 +1257,7 @@ class MemoryStore {
         rating: 5,
         sentiment: "POSITIVE",
         category: "Quality",
-        feedback_text: "The Ethiopian Yirgacheffe roast is genuinely the best single origin in town. Incredible citrus notes!",
+        feedback_text: "The Monsooned Malabar and Ethiopian Yirgacheffe roasts are exceptionally rich with delicate floral and citrus aromas. World-class bean selection!",
         status: "ACKNOWLEDGED",
         created_at: new Date(Date.now() - 3600 * 1000 * 24 * 2)
       },
@@ -967,7 +1266,7 @@ class MemoryStore {
         merchant_id: merchant.id,
         customer_id: customers[1].id,
         customer_name: "Emily Watson",
-        customer_phone: "5552345678",
+        customer_phone: "5559876543",
         rating: 4,
         sentiment: "POSITIVE",
         category: "Ambience",
@@ -991,20 +1290,46 @@ class MemoryStore {
       {
         id: this.feedbackSeq++,
         merchant_id: merchant.id,
-        customer_id: null,
+        customer_id: customers[4].id,
         customer_name: "Priya Sharma",
         customer_phone: "9876541122",
         rating: 5,
         sentiment: "POSITIVE",
         category: "Service",
-        feedback_text: "Cashier was super helpful and verified my Mithra Plus membership in seconds. Saved ₹130!",
+        feedback_text: "Cashier was super helpful and verified my Mithra Plus membership in seconds. Saved ₹260!",
         status: "ACKNOWLEDGED",
         created_at: new Date(Date.now() - 3600 * 1000 * 24 * 1)
+      },
+      {
+        id: this.feedbackSeq++,
+        merchant_id: merchant.id,
+        customer_id: customers[5].id,
+        customer_name: "Rohan Verma",
+        customer_phone: "9988776655",
+        rating: 5,
+        sentiment: "POSITIVE",
+        category: "Pricing",
+        feedback_text: "Mithra VIP pass easily paid for itself in two visits! Outstanding loyalty perks, scratch cards, and friendly staff.",
+        status: "ACKNOWLEDGED",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 5)
+      },
+      {
+        id: this.feedbackSeq++,
+        merchant_id: merchant.id,
+        customer_id: null,
+        customer_name: "Ananya Iyer",
+        customer_phone: "9845011223",
+        rating: 4,
+        sentiment: "POSITIVE",
+        category: "Quality",
+        feedback_text: "Organic Oat Milk iced latte was creamy and perfectly balanced. Love that all takeaway packaging is 100% compostable.",
+        status: "NEW",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 6)
       }
     ];
     this.customer_feedback.push(...feedbackList);
 
-    // Seed Feature Experiments (R&D Pillar)
+    // Seed Feature Experiments (R&D Pillar A/B Tests)
     const experimentsList = [
       {
         id: this.experimentSeq++,
@@ -1037,6 +1362,22 @@ class MemoryStore {
         conversion_rate_b: 18.20,
         results_summary: "Concluded with high statistical significance: Scratch cards increased redemptions by 2.4x.",
         created_at: new Date(Date.now() - 3600 * 1000 * 24 * 25)
+      },
+      {
+        id: this.experimentSeq++,
+        merchant_id: merchant.id,
+        test_name: "Dynamic Khata Credit Limit Notification at Checkout",
+        hypothesis: "Displaying remaining Udhaar credit balance inside the storefront drawer reduces abandoned checkouts.",
+        target_segment: "UDHAAR_USERS",
+        variant_a: "Live Remaining Khata Balance Banner",
+        variant_b: "Standard Pay Later (Khata) Button",
+        conversion_metric: "Checkout Completion %",
+        status: "RUNNING",
+        sample_size: 85,
+        conversion_rate_a: 28.00,
+        conversion_rate_b: 19.50,
+        results_summary: "Showing remaining credit limit increases checkout completion by +8.5%.",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 8)
       }
     ];
     this.experiments.push(...experimentsList);
@@ -1078,11 +1419,23 @@ class MemoryStore {
         description: "Variable tag {customer_name} should trim whitespace before encoding.",
         status: "RESOLVED",
         created_at: new Date(Date.now() - 3600 * 1000 * 24 * 5)
+      },
+      {
+        id: this.betaLogSeq++,
+        merchant_id: merchant.id,
+        feature_name: "1-Click Auto-PO WhatsApp Replenishment",
+        tester_name: "Anita Desai (Supervisor)",
+        tester_phone: "9876504444",
+        feedback_type: "UX_FEEDBACK",
+        severity: "LOW",
+        description: "Auto-PO correctly picked up the 3 low stock items and generated the WhatsApp message to our Coorg supplier in one click.",
+        status: "RESOLVED",
+        created_at: new Date(Date.now() - 3600 * 1000 * 24 * 3)
       }
     ];
     this.beta_testing_logs.push(...betaLogs);
 
-    // Seed Multi-Branch Outlets (Executive Pillar)
+    // Seed Multi-Branch Outlets (Executive Pillar in Bengaluru)
     const branchesList = [
       {
         id: this.branchSeq++,
@@ -1093,7 +1446,7 @@ class MemoryStore {
         city: "Bengaluru",
         phone: "+91-80-2345-0001",
         manager_name: "Sarah Jenkins",
-        daily_target: 35000.00,
+        daily_target: 45000.00,
         is_active: true,
         created_at: new Date()
       },
@@ -1106,7 +1459,7 @@ class MemoryStore {
         city: "Bengaluru",
         phone: "+91-80-2345-0002",
         manager_name: "Vikram Rathore",
-        daily_target: 28000.00,
+        daily_target: 35000.00,
         is_active: true,
         created_at: new Date()
       },
@@ -1119,7 +1472,7 @@ class MemoryStore {
         city: "Bengaluru",
         phone: "+91-80-2345-0003",
         manager_name: "Anita Desai",
-        daily_target: 45000.00,
+        daily_target: 65000.00,
         is_active: true,
         created_at: new Date()
       }

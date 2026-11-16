@@ -608,14 +608,18 @@ npm run client
 To test immediately, click **"1-Click Demo"** on the login screen, or sign in with:
 - **Email**: `demo@artisancoffee.com`
 - **Password**: `merchant123`
+- **Store**: Artisan Coffee Roasters, 100 Specialty Way, Indiranagar, Bengaluru
+- **All Currencies**: Formatted in Indian Rupees (₹)
 
-### Demo Customers Available for POS Testing:
+### Demo Customers Available for POS & Omnichannel Testing:
 | Customer Name | Phone Number | Membership Tier | Discount | Perks |
 | :--- | :--- | :--- | :--- | :--- |
 | **Alex Rivera** | `5551234567` | Gold Brew Connoisseur | **20% OFF** | Priority ordering & gifts |
 | **Emily Watson** | `5559876543` | Coffee Club Basic | **10% OFF** | Free size upgrade |
 | **David Chen** | `5553456789` | VIP Roaster Pass | **25% OFF** | Monthly tasting & 250g beans |
-| **Sophia Martinez** | `5554567890` | Non-Member | **0%** | Standard Customer |
+| **Sophia Martinez** | `5554567890` | Non-Member | **0%** | Standard Walk-in Customer |
+| **Priya Sharma** | `9876541122` | Non-Member (Storefront) | **0%** | Digital Storefront Ordering |
+| **Rohan Verma** | `9988776655` | VIP Roaster Pass | **25% OFF** | Wholesale & Roastery VIP Pass |
 
 ---
 
@@ -631,9 +635,9 @@ To test immediately, click **"1-Click Demo"** on the login screen, or sign in wi
    ```json
    {
      "customer_id": 1,
-     "bill_amount": 50.00
+     "bill_amount": 1450.00
    }
    ```
-   - Automatically computes 20% discount ($10.00).
-   - Net payable: $40.00.
+   - Automatically computes 20% discount (₹290.00).
+   - Net payable: ₹1,160.00.
    - Logs transaction into `redemptions` table and returns a printable receipt.
