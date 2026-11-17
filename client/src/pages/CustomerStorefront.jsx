@@ -1275,7 +1275,7 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
                   {/* Payment Mode Selector: Online / UPI vs Cash on Delivery / Counter vs Digital Khata */}
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 block">Payment Mode</label>
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => setPaymentMode('online')}
@@ -1308,22 +1308,6 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
                         <p className="text-[9px] text-slate-400">
                           {orderType === 'delivery' ? 'COD at Door' : 'Pay at Counter'}
                         </p>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMode('khata')}
-                        className={`p-2 rounded-xl border text-left transition-all ${
-                          paymentMode === 'khata'
-                            ? 'bg-indigo-500/10 border-indigo-500 text-white shadow-sm'
-                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center gap-1 text-[11px] font-bold text-indigo-400 mb-0.5">
-                          <BookOpen className="w-3 h-3" />
-                          <span>Pay Later</span>
-                        </div>
-                        <p className="text-[9px] text-slate-400">Khata (7d)</p>
                       </button>
                     </div>
                   </div>
@@ -1555,37 +1539,27 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
                 </div>
               )}
 
-              {/* Payment selector: Online, Cash on Del/Counter, Pay Later Khata */}
-              <div className="grid grid-cols-3 gap-1.5">
+              {/* Payment selector: Online UPI vs Cash on Delivery / Counter */}
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setPaymentMode('online')}
-                  className={`p-2 rounded-xl border text-xs font-bold text-center transition-all ${
+                  className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${
                     paymentMode === 'online' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-400'
                   }`}
                 >
-                  <CreditCard className="w-3.5 h-3.5 mx-auto mb-0.5" />
-                  <span className="block text-[10px]">UPI/Online</span>
+                  <CreditCard className="w-4 h-4 mx-auto mb-0.5" />
+                  <span className="block text-xs font-bold">UPI / Online</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMode('cash')}
-                  className={`p-2 rounded-xl border text-xs font-bold text-center transition-all ${
+                  className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${
                     paymentMode === 'cash' ? 'bg-amber-500/15 border-amber-500 text-amber-300' : 'bg-slate-950 border-slate-800 text-slate-400'
                   }`}
                 >
-                  <Banknote className="w-3.5 h-3.5 mx-auto mb-0.5" />
-                  <span className="block text-[10px]">{orderType === 'delivery' ? 'COD' : 'Cash Pay'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMode('khata')}
-                  className={`p-2 rounded-xl border text-xs font-bold text-center transition-all ${
-                    paymentMode === 'khata' ? 'bg-indigo-500/10 border-indigo-500 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-400'
-                  }`}
-                >
-                  <BookOpen className="w-3.5 h-3.5 mx-auto mb-0.5" />
-                  <span className="block text-[10px]">Khata</span>
+                  <Banknote className="w-4 h-4 mx-auto mb-0.5" />
+                  <span className="block text-xs font-bold">{orderType === 'delivery' ? 'COD' : 'Cash at Counter'}</span>
                 </button>
               </div>
 

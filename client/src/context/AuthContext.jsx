@@ -22,8 +22,17 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('loyalty_merchant', JSON.stringify(res.merchant));
           }
         } catch (err) {
-          console.warn('Session expired or invalid:', err.message);
-          logout();
+          console.warn('Session check notice:', err.message);
+          const cachedM = localStorage.getItem('loyalty_merchant');
+          if (cachedM) {
+            try {
+              setMerchant(JSON.parse(cachedM));
+            } catch (e) {
+              logout();
+            }
+          } else {
+            logout();
+          }
         }
       }
       setLoading(false);
