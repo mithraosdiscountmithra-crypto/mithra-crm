@@ -45,7 +45,8 @@ import {
   Upload, 
   Loader2, 
   QrCode,
-  Crown
+  Crown,
+  Sliders
 } from 'lucide-react';
 
 export default function CustomerStorefront({ initialSubView = 'store', isPublicCustomer = false }) {
@@ -120,10 +121,62 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
   const [orderType, setOrderType] = useState('delivery'); // 'delivery', 'pickup', or 'dine_in'
   const [tableNumber, setTableNumber] = useState(''); // Table number for dine-in
   const [guestsCount, setGuestsCount] = useState('2'); // Number of guests
-  const [paymentMode, setPaymentMode] = useState('online'); // 'online', 'cash', or 'khata'
+  const [paymentMode, setPaymentMode] = useState('online'); // 'online', 'cash'
   const [orderNotes, setOrderNotes] = useState('');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderSuccessData, setOrderSuccessData] = useState(null);
+
+  // Ordering Channels Config (Delivery, Takeaway / Pickup, Dine-In Table Booking)
+  const [orderChannels, setOrderChannels] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`store_order_channels_${tenantId}`);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {
+      delivery: true,
+      takeaway: true,
+      dine_in: true
+    };
+  });
+
+  const handleToggleChannel = (channelKey) => {
+    setOrderChannels(prev => {
+      const updated = { ...prev, [channelKey]: !prev[channelKey] };
+      // Prevent turning all 3 channels off simultaneously
+      if (!updated.delivery && !updated.takeaway && !updated.dine_in) {
+        alert('⚠️ At least one order option (Delivery, Takeaway, or Dine-In) must remain enabled.');
+        return prev;
+      }
+      try {
+        localStorage.setItem(`store_order_channels_${tenantId}`, JSON.stringify(updated));
+      } catch (e) {}
+
+      // If merchant is logged in, sync to server profile
+      if (!isPublicCustomer) {
+        api.auth.updateProfile({
+          enable_delivery: updated.delivery,
+          enable_takeaway: updated.takeaway,
+          enable_dine_in: updated.dine_in
+        }).catch(() => {});
+      }
+
+      return updated;
+    });
+  };
+
+  // Ensure orderType matches an active enabled channel
+  useEffect(() => {
+    if (!orderChannels.delivery && orderType === 'delivery') {
+      if (orderChannels.takeaway) setOrderType('pickup');
+      else if (orderChannels.dine_in) setOrderType('dine_in');
+    } else if (!orderChannels.takeaway && orderType === 'pickup') {
+      if (orderChannels.delivery) setOrderType('delivery');
+      else if (orderChannels.dine_in) setOrderType('dine_in');
+    } else if (!orderChannels.dine_in && orderType === 'dine_in') {
+      if (orderChannels.delivery) setOrderType('delivery');
+      else if (orderChannels.takeaway) setOrderType('pickup');
+    }
+  }, [orderChannels, orderType]);
 
   // Vendor Add Menu Item Modal State
   const [isAddMenuModalOpen, setIsAddMenuModalOpen] = useState(false);
@@ -224,6 +277,19 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
       const res = await api.customer.getProducts(tenantId);
       if (res.success) {
         setStoreInfo(res.merchant);
+        // Sync Ordering Channels (Delivery, Takeaway, Dine-In)
+        try {
+          const raw = localStorage.getItem(`store_order_channels_${tenantId}`);
+          if (raw) {
+            setOrderChannels(JSON.parse(raw));
+          } else if (res.merchant) {
+            setOrderChannels({
+              delivery: res.merchant.enable_delivery !== false,
+              takeaway: res.merchant.enable_takeaway !== false,
+              dine_in: res.merchant.enable_dine_in !== false
+            });
+          }
+        } catch (e) {}
         setPhotoForm({
           banner_url: res.merchant?.banner_url || '',
           photo_url: res.merchant?.photo_url || ''
@@ -678,6 +744,122 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
                   </span>
                 )}
               </button>
+            </div>
+          </div>
+
+          {/* QUICK ORDER CHANNELS ON/OFF SWITCHER (VENDOR CONTROL) */}
+          <div className="w-full pt-4 border-t border-slate-800 space-y-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+              <div className="flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-black uppercase tracking-wider text-slate-200">
+                  Customer Ordering Channels (కస్టమర్లకు కనిపించే ఆర్డర్ ఆప్షన్లు)
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-400">
+                Click switch to enable or disable options instantly on live storefront:
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-0.5">
+              {/* 1. Delivery Switch */}
+              <div className={`p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                orderChannels.delivery 
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-white shadow-sm' 
+                  : 'bg-slate-950/70 border-slate-800 text-slate-500 opacity-60'
+              }`}>
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                    orderChannels.delivery ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'
+                  }`}>
+                    <Truck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black">Home Delivery</div>
+                    <div className="text-[10px] text-slate-400">
+                      {orderChannels.delivery ? '🟢 Active (కస్టమర్లకు ఆన్)' : '🔴 Disabled (ఆపివేయబడింది)'}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleToggleChannel('delivery')}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                    orderChannels.delivery ? 'bg-emerald-500' : 'bg-slate-700'
+                  }`}
+                  title="Toggle Home Delivery"
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    orderChannels.delivery ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+                </button>
+              </div>
+
+              {/* 2. Takeaway Switch */}
+              <div className={`p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                orderChannels.takeaway 
+                  ? 'bg-amber-500/10 border-amber-500/30 text-white shadow-sm' 
+                  : 'bg-slate-950/70 border-slate-800 text-slate-500 opacity-60'
+              }`}>
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                    orderChannels.takeaway ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-500'
+                  }`}>
+                    <ShoppingBag className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black">Takeaway / Pickup</div>
+                    <div className="text-[10px] text-slate-400">
+                      {orderChannels.takeaway ? '🟢 Active (స్టోర్ పికప్ ఆన్)' : '🔴 Disabled (ఆపివేయబడింది)'}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleToggleChannel('takeaway')}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                    orderChannels.takeaway ? 'bg-amber-500' : 'bg-slate-700'
+                  }`}
+                  title="Toggle Takeaway / Pickup"
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    orderChannels.takeaway ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+                </button>
+              </div>
+
+              {/* 3. Dine-In Booking Switch */}
+              <div className={`p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                orderChannels.dine_in 
+                  ? 'bg-purple-500/10 border-purple-500/30 text-white shadow-sm' 
+                  : 'bg-slate-950/70 border-slate-800 text-slate-500 opacity-60'
+              }`}>
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                    orderChannels.dine_in ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-800 text-slate-500'
+                  }`}>
+                    <UtensilsCrossed className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black">Dine-In Table Booking</div>
+                    <div className="text-[10px] text-slate-400">
+                      {orderChannels.dine_in ? '🟢 Active (టేబుల్ బుకింగ్ ఆన్)' : '🔴 Disabled (ఆపివేయబడింది)'}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleToggleChannel('dine_in')}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                    orderChannels.dine_in ? 'bg-purple-500' : 'bg-slate-700'
+                  }`}
+                  title="Toggle Dine-In Table Booking"
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    orderChannels.dine_in ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1150,44 +1332,56 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
               {/* Checkout Form */}
               {cartItems.length > 0 && (
                 <form onSubmit={handlePlaceOrder} className="space-y-4 pt-3 border-t border-slate-800">
-                  {/* Delivery vs Pickup vs Dine-In Selector */}
-                  <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
-                    <button
-                      type="button"
-                      onClick={() => setOrderType('delivery')}
-                      className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        orderType === 'delivery'
-                          ? 'bg-emerald-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      <Truck className="w-3.5 h-3.5" />
-                      <span>Delivery</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOrderType('pickup')}
-                      className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        orderType === 'pickup'
-                          ? 'bg-emerald-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      <Store className="w-3.5 h-3.5" />
-                      <span>Pickup</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOrderType('dine_in')}
-                      className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        orderType === 'dine_in'
-                          ? 'bg-purple-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      <UtensilsCrossed className="w-3.5 h-3.5" />
-                      <span>Dine-In</span>
-                    </button>
+                  {/* Delivery vs Takeaway vs Dine-In Selector (Dynamic based on Vendor Settings) */}
+                  <div className={`grid gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 ${
+                    ((orderChannels.delivery ? 1 : 0) + (orderChannels.takeaway ? 1 : 0) + (orderChannels.dine_in ? 1 : 0)) === 3
+                      ? 'grid-cols-3'
+                      : ((orderChannels.delivery ? 1 : 0) + (orderChannels.takeaway ? 1 : 0) + (orderChannels.dine_in ? 1 : 0)) === 2
+                      ? 'grid-cols-2'
+                      : 'grid-cols-1'
+                  }`}>
+                    {orderChannels.delivery && (
+                      <button
+                        type="button"
+                        onClick={() => setOrderType('delivery')}
+                        className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          orderType === 'delivery'
+                            ? 'bg-emerald-600 text-white shadow-sm'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <Truck className="w-3.5 h-3.5" />
+                        <span>Delivery</span>
+                      </button>
+                    )}
+                    {orderChannels.takeaway && (
+                      <button
+                        type="button"
+                        onClick={() => setOrderType('pickup')}
+                        className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          orderType === 'pickup'
+                            ? 'bg-emerald-600 text-white shadow-sm'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <Store className="w-3.5 h-3.5" />
+                        <span>Takeaway</span>
+                      </button>
+                    )}
+                    {orderChannels.dine_in && (
+                      <button
+                        type="button"
+                        onClick={() => setOrderType('dine_in')}
+                        className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          orderType === 'dine_in'
+                            ? 'bg-purple-600 text-white shadow-sm'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <UtensilsCrossed className="w-3.5 h-3.5" />
+                        <span>Dine-In</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Dine-In Table Booking Form */}
@@ -1433,34 +1627,50 @@ export default function CustomerStorefront({ initialSubView = 'store', isPublicC
 
             {/* Mobile Form Details */}
             <form onSubmit={handlePlaceOrder} className="space-y-3.5">
-              <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setOrderType('delivery')}
-                  className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    orderType === 'delivery' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400'
-                  }`}
-                >
-                  Delivery
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOrderType('pickup')}
-                  className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    orderType === 'pickup' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400'
-                  }`}
-                >
-                  Pickup
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOrderType('dine_in')}
-                  className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    orderType === 'dine_in' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400'
-                  }`}
-                >
-                  🍽️ Dine-In
-                </button>
+              {/* Delivery vs Takeaway vs Dine-In Selector (Dynamic based on Vendor Settings) */}
+              <div className={`grid gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 ${
+                ((orderChannels.delivery ? 1 : 0) + (orderChannels.takeaway ? 1 : 0) + (orderChannels.dine_in ? 1 : 0)) === 3
+                  ? 'grid-cols-3'
+                  : ((orderChannels.delivery ? 1 : 0) + (orderChannels.takeaway ? 1 : 0) + (orderChannels.dine_in ? 1 : 0)) === 2
+                  ? 'grid-cols-2'
+                  : 'grid-cols-1'
+              }`}>
+                {orderChannels.delivery && (
+                  <button
+                    type="button"
+                    onClick={() => setOrderType('delivery')}
+                    className={`py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                      orderType === 'delivery' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <Truck className="w-3.5 h-3.5" />
+                    <span>Delivery</span>
+                  </button>
+                )}
+                {orderChannels.takeaway && (
+                  <button
+                    type="button"
+                    onClick={() => setOrderType('pickup')}
+                    className={`py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                      orderType === 'pickup' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <Store className="w-3.5 h-3.5" />
+                    <span>Takeaway</span>
+                  </button>
+                )}
+                {orderChannels.dine_in && (
+                  <button
+                    type="button"
+                    onClick={() => setOrderType('dine_in')}
+                    className={`py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                      orderType === 'dine_in' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <UtensilsCrossed className="w-3.5 h-3.5" />
+                    <span>Dine-In</span>
+                  </button>
+                )}
               </div>
 
               {/* Mobile Dine-In Table Booking Form */}

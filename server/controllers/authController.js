@@ -167,7 +167,20 @@ export const getProfile = async (req, res) => {
  */
 export const updateProfile = async (req, res) => {
   try {
-    const { store_name, owner_name, category, phone, address, city, banner_url, photo_url, logo_url } = req.body;
+    const { 
+      store_name, 
+      owner_name, 
+      category, 
+      phone, 
+      address, 
+      city, 
+      banner_url, 
+      photo_url, 
+      logo_url,
+      enable_delivery,
+      enable_takeaway,
+      enable_dine_in 
+    } = req.body;
     const merchantId = req.merchantId;
 
     const result = await db.query(
@@ -190,12 +203,15 @@ export const updateProfile = async (req, res) => {
       ...result.rows[0],
       banner_url: banner_url || req.merchant.banner_url || null,
       photo_url: photo_url || req.merchant.photo_url || null,
-      logo_url: logo_url || req.merchant.logo_url || null
+      logo_url: logo_url || req.merchant.logo_url || null,
+      enable_delivery: enable_delivery !== undefined ? enable_delivery : (req.merchant.enable_delivery !== false),
+      enable_takeaway: enable_takeaway !== undefined ? enable_takeaway : (req.merchant.enable_takeaway !== false),
+      enable_dine_in: enable_dine_in !== undefined ? enable_dine_in : (req.merchant.enable_dine_in !== false)
     };
 
     return res.json({
       success: true,
-      message: 'Store profile and shop photo updated successfully',
+      message: 'Store profile, ordering channels and shop photo updated successfully',
       merchant: updated
     });
   } catch (err) {

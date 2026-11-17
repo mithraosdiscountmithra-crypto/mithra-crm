@@ -70,7 +70,10 @@ export const getStorefrontProducts = async (req, res, next) => {
         city: merchant.city,
         banner_url: merchant.banner_url,
         photo_url: merchant.photo_url,
-        logo_url: merchant.logo_url
+        logo_url: merchant.logo_url,
+        enable_delivery: merchant.enable_delivery !== false,
+        enable_takeaway: merchant.enable_takeaway !== false,
+        enable_dine_in: merchant.enable_dine_in !== false
       },
       categories,
       products,

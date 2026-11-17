@@ -20,7 +20,11 @@ import {
   Loader2, 
   Sparkles,
   ExternalLink,
-  QrCode
+  QrCode,
+  Truck,
+  ShoppingBag,
+  UtensilsCrossed,
+  Sliders
 } from 'lucide-react';
 
 export default function Settings() {
@@ -36,6 +40,32 @@ export default function Settings() {
   const [city, setCity] = useState(merchant?.city || '');
   const [bannerUrl, setBannerUrl] = useState(merchant?.banner_url || '');
   const [photoUrl, setPhotoUrl] = useState(merchant?.photo_url || '');
+
+  // Ordering Channels State (Delivery, Takeaway / Pickup, Dine-In Table Booking)
+  const tenantId = merchant?.id || 1;
+  const [enableDelivery, setEnableDelivery] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`store_order_channels_${tenantId}`);
+      if (saved) return JSON.parse(saved).delivery !== false;
+    } catch (e) {}
+    return merchant?.enable_delivery !== false;
+  });
+
+  const [enableTakeaway, setEnableTakeaway] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`store_order_channels_${tenantId}`);
+      if (saved) return JSON.parse(saved).takeaway !== false;
+    } catch (e) {}
+    return merchant?.enable_takeaway !== false;
+  });
+
+  const [enableDineIn, setEnableDineIn] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`store_order_channels_${tenantId}`);
+      if (saved) return JSON.parse(saved).dine_in !== false;
+    } catch (e) {}
+    return merchant?.enable_dine_in !== false;
+  });
 
   // File Upload states for Banner & Logo
   const [uploadingBanner, setUploadingBanner] = useState(false);
@@ -120,10 +150,24 @@ export default function Settings() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!enableDelivery && !enableTakeaway && !enableDineIn) {
+      setError('Please keep at least one ordering option (Delivery, Takeaway, or Dine-In) enabled.');
+      return;
+    }
+
     try {
       setSaving(true);
       setError('');
       setSuccess('');
+
+      const channels = {
+        delivery: enableDelivery,
+        takeaway: enableTakeaway,
+        dine_in: enableDineIn
+      };
+      try {
+        localStorage.setItem(`store_order_channels_${tenantId}`, JSON.stringify(channels));
+      } catch (e) {}
 
       const res = await api.auth.updateProfile({
         store_name: storeName,
@@ -133,12 +177,15 @@ export default function Settings() {
         address,
         city,
         banner_url: bannerUrl,
-        photo_url: photoUrl
+        photo_url: photoUrl,
+        enable_delivery: enableDelivery,
+        enable_takeaway: enableTakeaway,
+        enable_dine_in: enableDineIn
       });
 
       if (res.success && res.merchant) {
-        updateMerchant(res.merchant);
-        setSuccess('Store profile and shop photos updated successfully!');
+        updateMerchant({ ...res.merchant, ...channels });
+        setSuccess('Store profile, ordering channels and shop photos updated successfully!');
       }
     } catch (err) {
       setError(err.message || 'Failed to update profile');
@@ -264,6 +311,107 @@ export default function Settings() {
               placeholder="e.g. 450 Market Street, Suite 10"
               className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
+          </div>
+        </div>
+
+        {/* Storefront Customer Ordering Channels (Delivery, Takeaway, Dine-In) */}
+        <div className="pt-5 border-t border-slate-800 space-y-4">
+          <div>
+            <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Sliders className="w-4 h-4" /> Storefront Customer Ordering Channels (ఆర్డరింగ్ ఆప్షన్లు)
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Turn ON or OFF the channels your store currently supports for online customers:
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+            {/* Delivery Switch */}
+            <div className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${
+              enableDelivery ? 'bg-emerald-500/10 border-emerald-500/30 text-white' : 'bg-slate-950 border-slate-800 text-slate-500 opacity-60'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  enableDelivery ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'
+                }`}>
+                  <Truck className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-black">Home Delivery</div>
+                  <div className="text-[10px] text-slate-400">ఇంటి వద్దకు డెలివరీ {enableDelivery ? '(🟢 ఆన్)' : '(🔴 ఆఫ్)'}</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEnableDelivery(!enableDelivery)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                  enableDelivery ? 'bg-emerald-500' : 'bg-slate-700'
+                }`}
+                title="Toggle Home Delivery"
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  enableDelivery ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+
+            {/* Takeaway Switch */}
+            <div className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${
+              enableTakeaway ? 'bg-amber-500/10 border-amber-500/30 text-white' : 'bg-slate-950 border-slate-800 text-slate-500 opacity-60'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  enableTakeaway ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-500'
+                }`}>
+                  <ShoppingBag className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-black">Takeaway / Pickup</div>
+                  <div className="text-[10px] text-slate-400">స్టోర్ పికప్ / పార్సిల్ {enableTakeaway ? '(🟢 ఆన్)' : '(🔴 ఆఫ్)'}</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEnableTakeaway(!enableTakeaway)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                  enableTakeaway ? 'bg-amber-500' : 'bg-slate-700'
+                }`}
+                title="Toggle Takeaway / Pickup"
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  enableTakeaway ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+
+            {/* Dine-In Switch */}
+            <div className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${
+              enableDineIn ? 'bg-purple-500/10 border-purple-500/30 text-white' : 'bg-slate-950 border-slate-800 text-slate-500 opacity-60'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  enableDineIn ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-800 text-slate-500'
+                }`}>
+                  <UtensilsCrossed className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-black">Dine-In Booking</div>
+                  <div className="text-[10px] text-slate-400">టేబుల్ వద్ద ఆర్డరింగ్ {enableDineIn ? '(🟢 ఆన్)' : '(🔴 ఆఫ్)'}</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEnableDineIn(!enableDineIn)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                  enableDineIn ? 'bg-purple-500' : 'bg-slate-700'
+                }`}
+                title="Toggle Dine-In Table Booking"
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  enableDineIn ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
           </div>
         </div>
 
